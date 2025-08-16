@@ -13,6 +13,11 @@
     "react-dom": "19.1.0",
     "next": "15.4.6"
   },
+  "packageManager": "npm@10.5.2",
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  },
   "devDependencies": {
     "typescript": "^5",
     "@types/node": "^20",
