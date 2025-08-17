@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Montserrat } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 
 const MontserratSans = Montserrat({
   variable: "--font-montserrat-sans",
