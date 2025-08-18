@@ -11,7 +11,7 @@ export const { auth, handlers } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Replace this with your actual user lookup logic
+       
         const user = { id: "1", name: "Test User", email: credentials?.email };
         return user;
       },
