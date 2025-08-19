@@ -1,6 +1,27 @@
+"use client"
+
+import { useEffect, useRef } from "react"
+import gsap from "gsap"
 import { Button } from "@/components/ui/LinkAsButton"
 
 export default function Hero() {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 } })
+
+      tl.from(".hero-tagline", { y: -20, opacity: 0 })
+        .from(".hero-heading", { y: 30, opacity: 0 }, "-=0.6")
+        .from(".hero-subheading", { y: 30, opacity: 0 }, "-=0.7")
+        .from(".hero-buttons", { y: 40, opacity: 0, stagger: 0.2 }, "-=0.6")
+    }, containerRef)
+
+    return () => ctx.revert()
+  }, [])
+
   return (
     <section className="relative overflow-hidden">
       {/* Background Image */}
@@ -25,10 +46,13 @@ export default function Hero() {
       />
 
       {/* Content */}
-      <div className="mx-auto grid max-w-6xl place-items-center px-6 py-28 text-center sm:py-36">
+      <div
+        ref={containerRef}
+        className="mx-auto grid max-w-6xl place-items-center px-6 py-28 text-center sm:py-36"
+      >
         {/* Tagline */}
         <span
-          className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-3 py-1 
+          className="hero-tagline mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-3 py-1 
           text-xs text-black/70 backdrop-blur 
           dark:border-white/10 dark:bg-white/5 dark:text-white/70"
         >
@@ -38,7 +62,7 @@ export default function Hero() {
 
         {/* Heading */}
         <h1
-          className="font-montserrat text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl 
+          className="hero-heading font-montserrat text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl 
           dark:text-white"
         >
           Learn Anywhere.{" "}
@@ -52,7 +76,7 @@ export default function Hero() {
 
         {/* Subheading */}
         <p
-          className="mt-5 max-w-2xl font-poppins text-base leading-7 text-slate-600 sm:text-lg 
+          className="hero-subheading mt-5 max-w-2xl font-poppins text-base leading-7 text-slate-600 sm:text-lg 
           dark:text-white/70"
         >
           Register, get approved, and start lessons on your preferred social
@@ -61,7 +85,7 @@ export default function Hero() {
         </p>
 
         {/* Buttons */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="hero-buttons mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button href="/(public)/register" variant="primary" size="lg">
             Get Started
           </Button>

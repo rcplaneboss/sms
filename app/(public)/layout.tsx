@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Poppins, Montserrat } from "next/font/google";
 import "../globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
 
 const MontserratSans = Montserrat({
   variable: "--font-montserrat-sans",
@@ -29,10 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow-hidden`}
+        className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow--hidden`}
       >
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   );

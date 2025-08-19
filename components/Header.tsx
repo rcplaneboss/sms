@@ -6,7 +6,7 @@ import { Button } from "./ui/LinkAsButton";
 import { DarkModeToggle } from "./ui/switch-toggle";
 const Header = () => {
   return (
-    <main className="flex flex-col w-screen relative">
+    <main className="flex flex-col w-screen sticky top-0 z-50">
       <DarkModeToggle />
       <div className="bg-p1-hex px-30 w-screen flex font-mono text-t-light h-10 max-md:px-16">
         <div className="flex justify-between w-full">

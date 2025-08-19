@@ -26,7 +26,7 @@ export default function FeatureHighlights() {
     <section className="py-20 md:py-28 bg-background">
       <div className="max-w-6xl mx-auto px-6 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12">
-          Why Choose <span className="text-p1-hex">EduGate</span>?
+          Why Choose <span className="text-p1-hex">AL-ITQAN</span>?
         </h2>
 
         <div className="grid gap-8 md:grid-cols-3">
