@@ -11,7 +11,7 @@ import {
 
 export function NavigationMenuDemo() {
   return (
-    <NavigationMenu>
+    <NavigationMenu className="max-md:px-24">
       <NavigationMenuList>
         <NavigationMenuItem>
           <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
@@ -41,7 +41,7 @@ export function NavigationMenuDemo() {
         {/* Example: vacancies.length > 0 */}
         <NavigationMenuItem>
           <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-            <Link href="/vacancies">Vacancies</Link>
+            <Link href="/vacancy">Vacancies</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
 

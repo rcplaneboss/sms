@@ -8,21 +8,43 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
   emailVerified DateTime?
   image         String?
-  role      Role
-  password  String
+  role          Role      @default(STUDENT)
+  password      String
   accounts      Account[]
   sessions      Session[]
-  createdAt DateTime @default(now())
+  createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  applications Application[]
-  exams        Exam[]        @relation("TeacherExams")
-  attempts     Attempt[]
+  applications   Application[]
+  exams          Exam[]          @relation("TeacherExams")
+  attempts       Attempt[]
+  StudentProfile StudentProfile?
+  programId     String?      
+  program       Program?      @relation(fields: [programId], references: [id])
+}
+
+model StudentProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  fullName    String
+  dateOfBirth DateTime
+  age         String
+  gender      String
+
+  phoneNumber String?
+  address  String
+
+   guardianName    String?
+  guardianContact String?
+
+  previousEducation String
 }
 
 model Account {
@@ -40,6 +62,7 @@ model Account {
 
   @@unique([providerId, providerAccountId])
 }
+
 
 model Session {
   id           String   @id @default(cuid())
@@ -64,38 +87,71 @@ model VerificationRequest {
 }
 
 model Application {
-  id        String   @id @default(uuid())
-  type      AppType
-  status    AppStatus @default(PENDING)
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime   @default(now())
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+
+  programId   String?      // for student applications
+  program     Program?     @relation(fields: [programId], references: [id])
+
+  vacancyId   String?      // for teacher applications
+  vacancy     Vacancy?     @relation(fields: [vacancyId], references: [id])
+
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Vacancy {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  requirements String[]     
+  location    String
+  type        JobType        
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  applications Application[]
+}
+
+
+model Program {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  applications Application[]
+  students     User[]        
 }
 
 model Exam {
-  id        String   @id @default(uuid())
-  title     String
-  createdBy User     @relation("TeacherExams", fields: [createdById], references: [id])
+  id          String     @id @default(uuid())
+  title       String
+  createdBy   User       @relation("TeacherExams", fields: [createdById], references: [id])
   createdById String
-  questions Question[]
-  attempts  Attempt[]
+  questions   Question[]
+  attempts    Attempt[]
 }
 
 model Question {
-  id      String   @id @default(uuid())
-  text    String
-  type    QuestionType
-  exam    Exam     @relation(fields: [examId], references: [id])
-  examId  String
+  id     String       @id @default(uuid())
+  text   String
+  type   QuestionType
+  exam   Exam         @relation(fields: [examId], references: [id])
+  examId String
 }
 
 model Attempt {
-  id      String   @id @default(uuid())
-  user    User     @relation(fields: [userId], references: [id])
-  userId  String
-  exam    Exam     @relation(fields: [examId], references: [id])
-  examId  String
-  score   Int?
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  exam   Exam   @relation(fields: [examId], references: [id])
+  examId String
+  score  Int?
 }
 
 enum Role {
@@ -109,7 +165,7 @@ enum AppType {
   TEACHER
 }
 
-enum AppStatus {
+enum ApplicationStatus {
   PENDING
   APPROVED
   REJECTED
@@ -118,4 +174,12 @@ enum AppStatus {
 enum QuestionType {
   MCQ
   TEXT
+}
+
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
 }
