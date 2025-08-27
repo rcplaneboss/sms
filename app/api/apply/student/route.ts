@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
                 phoneNumber: phoneNumber as string,
                 address: address as string,
                 guardianName: guardianName as string,
-                guardianNumber: guardianNumber as string,
+                guardianContact: guardianNumber as string,
                 previousEducation: previousEducation as string,
                 user: {
                     connect: {
