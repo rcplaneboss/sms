@@ -3,7 +3,7 @@ import { Poppins, Montserrat } from "next/font/google";
 import "../globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
+import { SessionProvider } from "next-auth/react";
 
 const MontserratSans = Montserrat({
   variable: "--font-montserrat-sans",
@@ -20,7 +20,8 @@ const PoppinsSans = Poppins({
 
 export const metadata: Metadata = {
   title: "School Management System",
-  description: "A comprehensive school management system for efficient administration.",
+  description:
+    "A comprehensive school management system for efficient administration.",
 };
 
 export default function RootLayout({
@@ -34,7 +35,7 @@ export default function RootLayout({
         className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow--hidden`}
       >
         <Header />
-        {children}
+        <SessionProvider>{children}</SessionProvider>
         <Footer />
       </body>
     </html>

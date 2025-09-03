@@ -10,9 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function SelectDemo({items} : {items: {value: string, label: string}[]}) {
+export function SelectDemo({items, value, onChange} : {items: {value: string, label: string}[], value: string, onChange: (value: string) => void}) {
   return (
-    <Select>
+    <Select value={value} onValueChange={onChange} required>
       <SelectTrigger className="w-full">
         <SelectValue placeholder={items[0].label} />
       </SelectTrigger>

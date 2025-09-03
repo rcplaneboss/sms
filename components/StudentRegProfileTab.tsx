@@ -17,7 +17,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { ProfileInput, ProfileSchema } from "@/prisma/schema";
-
+import { useRouter } from "next/router";
 
 export function StudentRegProfileTab({
   className,
@@ -25,6 +25,7 @@ export function StudentRegProfileTab({
   ...props
 }: React.ComponentProps<"div">) {
   const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
 
   const {
     register,
@@ -36,49 +37,53 @@ export function StudentRegProfileTab({
     resolver: zodResolver(ProfileSchema),
   });
 
-const onSubmit = async (data: ProfileInput) => {
-  try {
-    const formData = new FormData();
+  const onSubmit = async (data: ProfileInput) => {
+    try {
+      const formData = new FormData();
 
-    Object.keys(data).forEach((key) => {
-      if (key == "dateOfBirth") {
-        formData.append(key, (data[key] as Date).toISOString());
-      } else {
-        formData.append(key, (data as any)[key]);
+      Object.keys(data).forEach((key) => {
+        if (key == "dateOfBirth") {
+          formData.append(key, (data[key] as Date).toISOString());
+        } else {
+          formData.append(key, (data as any)[key]);
+        }
+      });
+
+      const today = new Date();
+      const birthDate = new Date(data.dateOfBirth);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
       }
-    });
 
-    const today = new Date();
-    const birthDate = new Date(data.dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+      formData.append("age", age.toString());
+      formData.append("userId", userId);
+
+      const res = await fetch("/api/apply/student?type=profile", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to submit profile");
+
+      const result = await res.json();
+      console.log(result);
+      router.push('/login?registered=true');
+
+    } catch (error: any) {
+      setErr(error.message || "Something went wrong");
     }
-
-
-    formData.append("age", age.toString());
-    formData.append("userId", userId);
-    
-    const res = await fetch("/api/apply/student?type=profile", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) throw new Error("Failed to submit profile");
-    const result = await res.json();
-    console.log(result);
-  } catch (error: any) {
-    setErr(error.message || "Something went wrong");
-  }
-};
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl font-sans">Essential Details</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground font-mono">
+          <CardTitle className="text-2xl font-bold font-sans text-p1-hex">
+            Essential Details
+          </CardTitle>
+          <CardDescription className="text-sm font-mono text-t-dark dark:text-t-light">
             You need to enter these personal information.
           </CardDescription>
         </CardHeader>
@@ -90,7 +95,12 @@ const onSubmit = async (data: ProfileInput) => {
                   <div className="grid gap-6">
                     {/* Full Name */}
                     <div className="grid gap-3">
-                      <Label htmlFor="full-name">Full Name</Label>
+                      <Label
+                        htmlFor="full-name"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
+                        Full Name
+                      </Label>
                       <Input
                         id="full-name"
                         type="text"
@@ -106,7 +116,12 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Gender */}
                     <div className="grid gap-3">
-                      <Label htmlFor="gender">Gender</Label>
+                      <Label
+                        htmlFor="gender"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
+                        Gender
+                      </Label>
                       <Input
                         id="gender"
                         type="text"
@@ -122,7 +137,12 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Date of Birth */}
                     <div className="grid gap-3">
-                      <Label htmlFor="date-of-birth">Date of Birth</Label>
+                      <Label
+                        htmlFor="date-of-birth"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
+                        Date of Birth
+                      </Label>
                       <Controller
                         control={control}
                         name="dateOfBirth"
@@ -142,7 +162,10 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Phone */}
                     <div className="grid gap-3">
-                      <Label htmlFor="phone-number">
+                      <Label
+                        htmlFor="phone-number"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
                         Phone Number / WhatsApp Number
                       </Label>
                       <Input
@@ -162,7 +185,10 @@ const onSubmit = async (data: ProfileInput) => {
                   <div className="grid gap-6">
                     {/* Address */}
                     <div className="grid gap-3">
-                      <Label htmlFor="residential-address">
+                      <Label
+                        htmlFor="residential-address"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
                         Residential Address (country at minimum)
                       </Label>
                       <Input
@@ -180,7 +206,10 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Guardian Name */}
                     <div className="grid gap-3">
-                      <Label htmlFor="guardian-name">
+                      <Label
+                        htmlFor="guardian-name"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
                         Guardian / Parent's Name
                       </Label>
                       <Input
@@ -198,7 +227,10 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Guardian Number */}
                     <div className="grid gap-3">
-                      <Label htmlFor="guardian-number">
+                      <Label
+                        htmlFor="guardian-number"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
                         Guardian / Parent's Number
                       </Label>
                       <Input
@@ -216,7 +248,10 @@ const onSubmit = async (data: ProfileInput) => {
 
                     {/* Previous Education */}
                     <div className="grid gap-3">
-                      <Label htmlFor="preferred-course">
+                      <Label
+                        htmlFor="preferred-course"
+                        className="text-sm font-semibold text-t-dark dark:text-t-light"
+                      >
                         Previous Course / Program
                       </Label>
                       <Controller
@@ -225,14 +260,15 @@ const onSubmit = async (data: ProfileInput) => {
                         render={({ field }) => (
                           <SelectDemo
                             items={[
-                              { value: "Basic", label: "Primary/Basic" },
+                              { value: "BASIC", label: "Primary/Basic" },
                               {
-                                value: "High School",
+                                value: "HIGH_SCHOOL",
                                 label: "High School/Secondary",
                               },
-                              { value: "Degree Holder", label: "B.sc" },
-                              { value: "Master Degree", label: "Master" },
-                              { value: "others", label: "Others" },
+                              { value: "DEGREE_HOLDER", label: "B.sc" },
+                              { value: "MASTER_DEGREE", label: "Master" },
+                              { value: "NOVICE", label: "Novice" },
+                              { value: "OTHERS", label: "Others" },
                             ]}
                             value={field.value}
                             onChange={field.onChange}
@@ -244,7 +280,11 @@ const onSubmit = async (data: ProfileInput) => {
                 </div>
 
                 {/* Submit */}
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="cursor=pointer w-full bg-p1-hex text-white hover:bg-opacity-90 transition-colors font-semibold"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
 

@@ -3,8 +3,8 @@ import { z } from "zod";
 export const UserSchema = z
   .object({
     email: z.string().email(),
-    username: z.string().min(2).max(100),
-    password: z.string().min(6).max(100),
+    username: z.string().min(2).max(100).regex(/^[a-zA-Z0-9_]+$/, "Username must be alphanumeric and can only contain underscores"),
+    password: z.string().min(8).max(100).regex(/^(?=.*[A-Za-z])(?=.*\d).{6,}$/, "Password must be at least 6 characters long and contain at least one letter and one number"),
     cPassword: z.string().min(6).max(100),
   })
   .refine((data) => data.password === data.cPassword, {
@@ -29,6 +29,55 @@ export const ProfileSchema = z.object({
   guardianNumber: z.string().min(8, "Guardian's number is required"),
   previousEducation: z.string().optional(),
 });
+
+export const teacherApplicationSchema = z.object({
+  vacancyId: z.string(),
+  highestDegree: z.string().min(2),
+  certifications: z.array(z.string()).optional(),
+  experienceYears: z.coerce.number().min(0),
+  achievements: z.string().optional(),
+  languages: z.array(z.string()).min(1),
+  techSkills: z.array(z.string()).optional(),
+  resumeUrl: z.string().url().optional(),
+  certificatesUrl: z.string().url().optional(),
+  motivation: z.string().min(10),
+  equipment: z.string().optional(),
+})
+
+export const teacherProfileSchema = z.object({
+  userId: z.string().uuid().optional(),
+  fullName: z.string().min(3, "Full name must be at least 3 characters"),
+  phoneNumber: z.string().min(7, "Phone number must be valid").max(15),
+  address: z.string().optional(),
+  highestDegree: z.string().optional(),
+  certifications: z
+    .string()
+    .transform((val) =>
+      val ? val.split(",").map((s) => s.trim()) : []
+    )
+    .optional(),
+  experienceYears: z.preprocess(
+    (val) => (val !== "" ? Number(val) : undefined),
+    z.number().int().min(0).optional()
+  ),
+  languages: z
+    .string()
+    .transform((val) =>
+      val ? val.split(",").map((s) => s.trim()) : []
+    )
+    .optional(),
+  techSkills: z
+    .string()
+    .transform((val) =>
+      val ? val.split(",").map((s) => s.trim()) : []
+    )
+    .optional(),
+  bio: z.string().max(500).optional(),
+  equipment: z.string().optional(),
+});
+export type TeacherProfileInput = z.infer<typeof teacherProfileSchema>;
+
+export type TeacherApplicationValues = z.infer<typeof teacherApplicationSchema>
 
 export type ProfileInput = z.infer<typeof ProfileSchema>;
   

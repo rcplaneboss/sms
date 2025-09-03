@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { FiFacebook, FiInstagram, FiTwitter } from "react-icons/fi";
 import { MdMail, MdPhone } from "react-icons/md";
 import { Menu } from "lucide-react";
-import { NavigationMenuDemo } from "./ui/Navigation";
+import { RoleNav } from "./ui/Navigation";
 import { Button } from "./ui/LinkAsButton";
 import { DarkModeToggle } from "./ui/switch-toggle";
 import {
@@ -14,22 +14,21 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { publicNav, studentNav, teacherNav, adminNav } from "@/lib/navConfig";
 
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
 
-  const links = [
-    { title: "Home", href: "/" },
-    { title: "About", href: "/about" },
-    { title: "Programs", href: "/programs" },
-    { title: "Pricing", href: "/pricing" },
-    { title: "Vacancies", href: "/vacancy" }, 
-    { title: "Register", href: "/register" },
-    { title: "Apply as Teacher", href: "/apply-teacher" },
-    { title: "Login", href: "/login" },
-  ];
+    const { data: session } = useSession();
+    const role = session?.user?.role;
+
+    let items = publicNav;
+    if (role === "student") items = studentNav;
+    if (role === "teacher") items = teacherNav;
+    if (role === "admin") items = adminNav;
 
   return (
     <main className="flex flex-col w-full sticky top-0 z-50">
@@ -71,7 +70,7 @@ const Header = () => {
 
           {/* Desktop Nav */}
           <div className="font-mono text-t-dark dark:text-t-light text-sm max-md:hidden">
-            <NavigationMenuDemo />
+            <RoleNav items={items} />
           </div>
 
           {/* Desktop Contact Button */}
@@ -94,7 +93,7 @@ const Header = () => {
                   <SheetTitle>Al-Itqan</SheetTitle>
                 </SheetHeader>
                 <nav className="mt-6 flex flex-col gap-4 px-6">
-                  {links.map((link) => (
+                  {items.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}

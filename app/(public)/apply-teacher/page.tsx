@@ -1,27 +1,25 @@
-import React from 'react'
+"use client";
 
-const page = () => {
+import TeacherRegister from "@/components/TeacherTabsClient";
+import { useSearchParams } from "next/navigation";
+
+export default function TeacherRegisterPage() {
+  const searchParams = useSearchParams();
+  const vacancyId = searchParams.get("vacancyId"); 
+
+  if (!vacancyId) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500 font-semibold">
+          ❌ No vacancy selected. Please apply through a vacancy link.
+        </p>
+      </main>
+    );
+  }
+
   return (
-    <div>
-      <h1>Apply to be a Teacher</h1>
-      <p>Please fill out the form below to apply for a teaching position.</p>
-      <form>
-        <div>
-          <label htmlFor="name">Name:</label>
-          <input type="text" id="name" name="name" required />
-        </div>
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input type="email" id="email" name="email" required />
-        </div>
-        <div>
-          <label htmlFor="subject">Subject:</label>
-          <input type="text" id="subject" name="subject" required />
-        </div>
-        <button type="submit">Submit Application</button>
-      </form>
-    </div>
-  )
+    <main className="min-h-screen flex items-center justify-center">
+      <TeacherRegister vacancyId={vacancyId} />
+    </main>
+  );
 }
-
-export default page
