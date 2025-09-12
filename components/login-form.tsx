@@ -1,63 +1,107 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { signIn } from "next-auth/react"
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { auth } from "@/auth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const searchParams = useSearchParams()
+  const searchParams = useSearchParams();
+
+  // // Redirect based on role if already logged in
+  // useEffect(() => {
+  //   // Check if the session is authenticated and not loading
+  //   if (status === "authenticated" && session) {
+  //     const userRole = session.user?.role;
+  //     console.log("Login form session:", session, status);
+
+  //     console.log("This the Role:", userRole);
+
+  //     if (userRole === "STUDENT") {
+  //       router.push(`/student-dashboard`);
+  //     } else if (userRole === "TEACHER") {
+  //       router.push(`/teacher-dashboard`);
+  //     } else if (userRole === "ADMIN") {
+  //       router.push(`/admin-dashboard`);
+  //     } else {
+  //       router.push(`/`); // Fallback
+  //     }
+  //   }
+  // }, [status, session, router]);
 
   // 👇 Catch error query string from NextAuth
   useEffect(() => {
-    const errorParam = searchParams.get("error")
+    const errorParam = searchParams.get("error");
     if (errorParam) {
       switch (errorParam) {
         case "CredentialsSignin":
-          setError("Invalid email or password")
-          break
+          setError("Invalid email or password");
+          break;
         case "NO_ACCOUNT":
-          setError("No account found for this Google account. Please register first.")
-          break
+          setError(
+            "No account found for this Google account. Please register first."
+          );
+          break;
         case "OAUTH_NOT_LINKED":
-          setError("This Google account is not linked. Please login with email and password, then link Google in your profile.")
-          break
+          setError(
+            "This Google account is not linked. Please login with email and password, then link Google in your profile."
+          );
+          break;
         default:
-          setError("Something went wrong. Please try again.")
+          setError("Something went wrong. Please try again.");
       }
     }
-  }, [searchParams])
+  }, [searchParams]);
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+  const formData = new FormData(e.currentTarget);
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+  const result = await signIn("credentials", {
+    email,
+    password,
+    redirect: false, // we’re handling redirect manually
+  });
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    })
+  setLoading(false);
 
-    setLoading(false)
+  if (result?.error) {
+    setError("Invalid email or password");
+  } else {
+    // Fetch updated session
+    const res = await fetch("/api/auth/session");
+    const session = await res.json();
+  console.log("Login form session:", session?.user?.role);
 
-    if (result?.error) {
-      setError("Invalid email or password")
+    const userRole = session?.user?.role;
+    if (userRole === "STUDENT") {
+      router.push("/student-dashboard");
+    } else if (userRole === "TEACHER") {
+      router.push("/teacher-dashboard");
+    } else if (userRole === "ADMIN") {
+      router.push("/admin-dashboard");
+    } else {
+      router.push("/");
     }
   }
+}
+
 
   return (
     <form
@@ -76,11 +120,21 @@ export function LoginForm({
 
       <div className="grid gap-6">
         <div className="grid gap-3">
-          <Label htmlFor="email" className="font-mono">Email</Label>
-          <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+          <Label htmlFor="email" className="font-mono">
+            Email
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="m@example.com"
+            required
+          />
         </div>
         <div className="grid gap-3">
-          <Label htmlFor="password" className="font-mono">Password</Label>
+          <Label htmlFor="password" className="font-mono">
+            Password
+          </Label>
           <Input id="password" name="password" type="password" required />
         </div>
 
@@ -140,5 +194,5 @@ export function LoginForm({
         </a>
       </div>
     </form>
-  )
+  );
 }

@@ -24,14 +24,23 @@ export default function TeacherAccountForm({
 }: React.ComponentProps<"div">) {
   const searchParams = useSearchParams();
   const role = searchParams.get("role");
-  const [err, setErr] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<AccountInput>({ mode: "all", resolver: zodResolver(UserSchema) });
+    reset,
+  } = useForm<AccountInput>({
+    mode: "onBlur",
+    resolver: zodResolver(UserSchema),
+  });
 
   const onSubmit = async (data: AccountInput) => {
+    setServerError(null);
+    setSuccessMessage(null);
+
     const formData = new FormData();
     Object.keys(data).forEach((key) => {
       formData.append(key, data[key as keyof AccountInput] as string);
@@ -43,18 +52,27 @@ export default function TeacherAccountForm({
         body: formData,
       });
 
-      if (response.ok) {
-        setUserId((await response.json()).user.id);
-        setIsAccountRegSucc(true);
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle known errors
+        if (result.error) {
+          setServerError(result.error);
+        } else if (result.details) {
+          setServerError("Please fix the highlighted errors and try again.");
+        } else {
+          setServerError("Something went wrong. Please try again.");
+        }
+        return;
       }
 
-      response.json().then((data) => {
-        if (data.message) {
-          setErr(data.message);
-        }
-      });
+      // Success 🎉
+      setUserId(result.user.id);
+      setIsAccountRegSucc(true);
+      setSuccessMessage(result.message || "Account created successfully!");
+      reset();
     } catch (error: any) {
-      setErr(error.message || "Something went wrong");
+      setServerError(error.message || "Something went wrong");
     }
   };
 
@@ -66,39 +84,19 @@ export default function TeacherAccountForm({
             Create an Account
           </CardTitle>
           <CardDescription className="text-sm font-mono text-t-dark dark:text-t-light">
-            Fill in the form below to create an Account
+            Fill in the form below to get started as a teacher
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* <form onClick={() => signIn("google", { redirectTo: "/register?registered=true" })}>
-            <div className="flex flex-col gap-4">
-              <Button variant="outline" className="w-full" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                    fill="currentColor"
-                  />
-                </svg>
-                Sign up with Google
-              </Button>
-            </div>
-          </form> */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Username */}
             <div className="grid gap-2">
-              <Label
-                htmlFor="username"
-                className="text-sm font-semibold text-t-dark dark:text-t-light"
-              >
-                Username
-              </Label>
+              <Label htmlFor="username">Username</Label>
               <Input
                 {...register("username")}
                 id="username"
-                type="text"
                 placeholder="Enter your username"
                 className="focus:ring-2 focus:ring-p1-hex"
-                required
               />
               {errors.username && (
                 <p className="text-xs text-red-500">
@@ -109,19 +107,13 @@ export default function TeacherAccountForm({
 
             {/* Email */}
             <div className="grid gap-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-semibold text-t-dark dark:text-t-light"
-              >
-                Email
-              </Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 {...register("email")}
                 id="email"
                 type="email"
                 placeholder="m@example.com"
                 className="focus:ring-2 focus:ring-p1-hex"
-                required
               />
               {errors.email && (
                 <p className="text-xs text-red-500">{errors.email.message}</p>
@@ -130,19 +122,13 @@ export default function TeacherAccountForm({
 
             {/* Password */}
             <div className="grid gap-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-semibold text-t-dark dark:text-t-light"
-              >
-                Password
-              </Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 {...register("password")}
                 id="password"
                 type="password"
                 placeholder="Enter password"
                 className="focus:ring-2 focus:ring-p1-hex"
-                required
               />
               {errors.password && (
                 <p className="text-xs text-red-500">
@@ -153,19 +139,13 @@ export default function TeacherAccountForm({
 
             {/* Confirm Password */}
             <div className="grid gap-2">
-              <Label
-                htmlFor="cPassword"
-                className="text-sm font-semibold text-t-dark dark:text-t-light"
-              >
-                Confirm Password
-              </Label>
+              <Label htmlFor="cPassword">Confirm Password</Label>
               <Input
                 {...register("cPassword")}
                 id="cPassword"
                 type="password"
                 placeholder="Confirm password"
                 className="focus:ring-2 focus:ring-p1-hex"
-                required
               />
               {errors.cPassword && (
                 <p className="text-xs text-red-500">
@@ -177,14 +157,23 @@ export default function TeacherAccountForm({
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full bg-p1-hex text-white hover:bg-opacity-90 transition-colors font-semibold cursor-pointer"
+              className="w-full bg-p1-hex text-white hover:bg-opacity-90 transition-colors font-semibold"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Signing up..." : "Sign up"}
+              {isSubmitting ? "Creating Account..." : "Sign up"}
             </Button>
 
-            {/* Error Message */}
-            {err && <p className="text-red-500 text-center text-sm">{err}</p>}
+            {/* Error / Success Feedback */}
+            {serverError && (
+              <p className="text-red-500 text-center text-sm mt-2">
+                {serverError}
+              </p>
+            )}
+            {successMessage && (
+              <p className="text-green-600 text-center text-sm mt-2">
+                {successMessage}
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>

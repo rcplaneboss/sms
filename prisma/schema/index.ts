@@ -75,6 +75,30 @@ export const teacherProfileSchema = z.object({
   bio: z.string().max(500).optional(),
   equipment: z.string().optional(),
 });
+
+export const levelSchema = z.object({
+  name: z.string().min(1, { message: 'Level name is required.' }),
+  description: z.string().optional(),
+});
+
+export const trackSchema = z.object({
+  name: z.string().min(1, { message: 'Track name is required.' }),
+  description: z.string().optional(),
+});
+
+export const programSchema = z.object({
+  name: z.string().min(1, { message: 'Program name is required.' }),
+  description: z.string().optional(),
+  levelId: z.string().min(1, { message: 'Level is required.' }),
+  trackId: z.string().min(1, { message: 'Track is required.' }),
+});
+
+export type LevelFormValues = z.infer<typeof levelSchema>;
+
+export type TrackFormValues = z.infer<typeof trackSchema>;
+
+export type ProgramFormValues = z.infer<typeof programSchema>;
+
 export type TeacherProfileInput = z.infer<typeof teacherProfileSchema>;
 
 export type TeacherApplicationValues = z.infer<typeof teacherApplicationSchema>

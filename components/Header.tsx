@@ -21,14 +21,19 @@ import Link from "next/link";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
-    const { data: session } = useSession();
-    const role = session?.user?.role;
+  const { data: session } = useSession();
+  const role = session?.user?.role.toLowerCase();
 
-    let items = publicNav;
-    if (role === "student") items = studentNav;
-    if (role === "teacher") items = teacherNav;
-    if (role === "admin") items = adminNav;
+  let items = publicNav;
+  if (role === "student") items = studentNav;
+  if (role === "teacher") items = teacherNav;
+  if (role === "admin") items = adminNav;
+
+  // Split the links for the "More" button functionality
+  const visibleItems = items.slice(0, 6);
+  const hiddenItems = items.slice(6);
 
   return (
     <main className="flex flex-col w-full sticky top-0 z-50">
@@ -69,8 +74,38 @@ const Header = () => {
           </div>
 
           {/* Desktop Nav */}
-          <div className="font-mono text-t-dark dark:text-t-light text-sm max-md:hidden">
-            <RoleNav items={items} />
+          <div className="font-mono text-t-dark dark:text-t-light text-sm max-md:hidden flex items-center gap-4">
+            <RoleNav items={visibleItems} />
+            {hiddenItems.length > 0 && (
+              <div className="relative">
+                <Button 
+                  onClick={() => setShowMore(!showMore)} 
+                  variant="ghost" 
+                  className="flex items-center gap-1 text-sm font-medium"
+                >
+                  More <Menu className="h-4 w-4" />
+                </Button>
+                {showMore && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-md shadow-lg overflow-hidden">
+                    <nav className="flex flex-col py-2">
+                      {hiddenItems.map((link) => (
+                        <Link
+                          key={link.label}
+                          href={link.href}
+                          className="px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                          onClick={() => {
+                            setShowMore(false);
+                            setOpen(false);
+                          }}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </nav>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Desktop Contact Button */}
@@ -95,12 +130,12 @@ const Header = () => {
                 <nav className="mt-6 flex flex-col gap-4 px-6">
                   {items.map((link) => (
                     <Link
-                      key={link.href}
+                      key={link.label}
                       href={link.href}
                       className="text-base font-medium text-slate-700 dark:text-slate-200 hover:underline"
                       onClick={() => setOpen(false)}
                     >
-                      {link.title}
+                      {link.label}
                     </Link>
                   ))}
                   <Button href="/about" variant="primary" className="mt-4">

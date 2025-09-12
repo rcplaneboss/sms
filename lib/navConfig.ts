@@ -33,5 +33,5 @@ export const adminNav = [
   { href: "/adverts", label: "Adverts" },
   { href: "/reports", label: "Reports" },
   { href: "/settings", label: "Settings" },
-  { href: "/programs", label: "Programs" },
+  { href: "/admin-program", label: "Programs" },
 ];

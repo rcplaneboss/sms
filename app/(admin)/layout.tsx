@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "A comprehensive school management system for efficient administration.",
 };
 
-export default function RootLayout({
+export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow--hidden`}
+        className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow-x-hidden`}
       >
         <SessionProvider>
         <Header />

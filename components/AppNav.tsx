@@ -19,7 +19,7 @@ export function AppNav({ items }: AppNavProps) {
     <NavigationMenu className="max-md:px-24">
       <NavigationMenuList>
         {items.map((item) => (
-          <NavigationMenuItem key={item.href}>
+          <NavigationMenuItem key={item.label}>
             <NavigationMenuLink
               asChild
               className={navigationMenuTriggerStyle()}

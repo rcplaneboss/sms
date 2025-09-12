@@ -17,7 +17,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { ProfileInput, ProfileSchema } from "@/prisma/schema";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export function StudentRegProfileTab({
   className,

@@ -1,26 +1,28 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/prisma";
 import bcrypt from "bcryptjs";
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+declare module "next-auth" {
+  interface Session {
+    user: {
+      role?: "ADMIN" | "TEACHER" | "STUDENT";
+    } & Session["user"];
+  }
+}
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
-  });
+// declare module "next-auth/adapters" {
+//   interface AdapterUser {
+//     role: "ADMIN" | "TEACHER" | "STUDENT";
+//   }
+// }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
+// ...existing code...
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database" },
+  session: { strategy: "jwt" }, // <-- Changed from "database" to "jwt"
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -50,6 +52,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
+
+        console.log("Prisma User object from authorize:", user);
+
         if (!user || !user.password) return null;
 
         const isValid = await bcrypt.compare(
@@ -71,7 +76,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!existingUser) {
-          // User does not exist → must register first
           return "/register?error=NO_ACCOUNT";
         }
 
@@ -80,7 +84,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!hasGoogleAccount) {
-          // Allow linking if the logged-in user is the same as the email owner
           if (user.id === existingUser.id) {
             await prisma.account.create({
               data: {
@@ -95,44 +98,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
             return true;
           }
-
-          // Otherwise, block the sign-in
           return "/login?error=OAUTH_NOT_LINKED";
         }
       }
-
       return true;
     },
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.role = user.role ?? "STUDENT";
+
+    async session({ session, token, user }) {
+      // For JWT strategy, use token to populate session
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string ?? "STUDENT";
       }
       return session;
     },
-   async redirect({ url, baseUrl }) {
-  if (url === baseUrl) {
-    const session = await auth();
-    const userRole = session?.user?.role;
 
-    if (userRole === "STUDENT") {
-      return `${baseUrl}/student-dashboard`;
-    }
-    if (userRole === "TEACHER") {
-      return `${baseUrl}/teacher-dashboard`;
-    }
-    if (userRole === "ADMIN") {
-      return `${baseUrl}/admin-dashboard`;
-    }
-  }
+    async jwt({ token, user }) {
+      // Persist user id and role in the token
+      if (user) {
+        token.id = user.id;
+        token.role = user.role ?? "STUDENT";
+      }
+      return token;
+    },
 
-  if (url.startsWith("/")) return `${baseUrl}${url}`;
-  if (new URL(url).origin === baseUrl) return url;
-  return baseUrl;
-},
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: "/login",
-    error: "/login", 
+    error: "/login",
   },
 });

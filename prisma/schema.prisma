@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------- //
+// Core User Models
+// ---------------------------------------------------------------- //
+
 model User {
   id            String    @id @default(uuid())
   name          String?
@@ -16,7 +20,6 @@ model User {
   role          Role      @default(STUDENT)
   password      String?
   accounts      Account[]
-  sessions      Session[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -25,8 +28,9 @@ model User {
   attempts       Attempt[]
   StudentProfile StudentProfile?
   TeacherProfile TeacherProfile?
-  programId      String?
-  program        Program?        @relation(fields: [programId], references: [id])
+
+  // A student can be enrolled in multiple programs
+  enrollments Enrollment[]
 }
 
 model StudentProfile {
@@ -49,9 +53,9 @@ model StudentProfile {
 }
 
 model TeacherProfile {
-  id        String @id @default(uuid())
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
   fullName    String
   phoneNumber String
@@ -63,67 +67,143 @@ model TeacherProfile {
   languages       String[]
   techSkills      String[]
 
-  bio        String?
-  equipment  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  bio       String?
+  equipment String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A teacher can teach many courses
+  coursesTaught Course[] @relation("TeacherCourses")
 }
 
 model Account {
-  id                 String    @id @default(cuid())
-  userId             String
-  providerType       String?
-  provider           String
-  providerAccountId  String
-  refreshToken       String?
-  access_token       String?
-  accessTokenExpires DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               User      @relation(fields: [userId], references: [id])
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
-  @@unique([provider, providerAccountId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  expires      DateTime
-  sessionToken String   @unique
-  accessToken  String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id])
+// ---------------------------------------------------------------- //
+// Programs, Courses & School Structure
+// ---------------------------------------------------------------- //
+
+// This model defines the academic levels (Primary, JSS, Secondary)
+model Level {
+  id       String    @id @default(uuid())
+  name     String    @unique // e.g., "Primary", "JSS", "Secondary"
+  duration Int? // e.g., 6 (years)
+  programs Program[]
 }
 
-model VerificationRequest {
-  id         String   @id @default(cuid())
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([identifier, token])
+// This model defines the academic tracks (Arabic, Western)
+model Track {
+  id       String    @id @default(uuid())
+  name     String    @unique // e.g., "Arabic", "Western"
+  programs Program[]
 }
+
+// The main program model now relates to Levels and Tracks
+model Program {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  // New foreign keys referencing the Level and Track models
+  levelId String
+  level   Level  @relation(fields: [levelId], references: [id])
+
+  trackId String
+  track   Track  @relation(fields: [trackId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A program is composed of many courses
+  courses Course[]
+
+  // Students are enrolled in a program through the Enrollment model
+  enrollments Enrollment[]
+  Application Application[]
+}
+
+// Represents a specific course (e.g., "JSS1 Mathematics")
+model Course {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  // Link to the subject (e.g., "Mathematics")
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  // Link to the parent program
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+
+  // Many-to-many relationship with teachers
+  teachers TeacherProfile[] @relation("TeacherCourses")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// A generic subject (e.g., Mathematics, Physics, Quranic Studies)
+model Subject {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  courses     Course[]
+}
+
+// Represents a student's enrollment in a specific program
+model Enrollment {
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+
+  status String @default("Active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, programId])
+}
+
+// ---------------------------------------------------------------- //
+// Applications and Vacancies
+// ---------------------------------------------------------------- //
 
 model Application {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  type      AppType  // STUDENT or TEACHER
+  type AppType // STUDENT or TEACHER
 
-  // Student applications
   programId String?
   program   Program? @relation(fields: [programId], references: [id])
 
-  // Teacher applications
   vacancyId String?
   vacancy   Vacancy? @relation(fields: [vacancyId], references: [id])
 
-  // Teacher-specific or additional data (form JSON for multistep)
-  details   Json?
+  details Json?
 
   status    ApplicationStatus @default(PENDING)
   createdAt DateTime          @default(now())
@@ -144,16 +224,9 @@ model Vacancy {
   applications Application[]
 }
 
-model Program {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  applications Application[]
-  students     User[]
-}
+// ---------------------------------------------------------------- //
+// Exams and Questions
+// ---------------------------------------------------------------- //
 
 model Exam {
   id          String     @id @default(uuid())
@@ -180,6 +253,10 @@ model Attempt {
   examId String
   score  Int?
 }
+
+// ---------------------------------------------------------------- //
+// Enums
+// ---------------------------------------------------------------- //
 
 enum Role {
   STUDENT
@@ -208,13 +285,4 @@ enum JobType {
   PART_TIME
   CONTRACT
   INTERNSHIP
-}
-
-enum PreviousEducationType {
-  BASIC
-  HIGH_SCHOOL
-  MASTER_DEGREE
-  DEGREE_HOLDER
-  NOVICE
-  OTHERS
 }
