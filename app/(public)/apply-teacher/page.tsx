@@ -29,7 +29,6 @@ import { Suspense } from "react";
 import TeacherRegister from "@/components/TeacherTabsClient";
 import { useSearchParams } from "next/navigation";
 
-// Disable prerendering so Next.js doesn't try to collect params at build
 export const dynamic = "force-dynamic";
 
 function TeacherRegisterPageClient() {

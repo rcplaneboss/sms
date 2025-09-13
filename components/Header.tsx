@@ -39,7 +39,7 @@ const Header = () => {
     <main className="flex flex-col w-full sticky top-0 z-50">
       {/* Dark mode toggle bar */}
       <DarkModeToggle />
-      <div className="bg-p1-hex px-30 w-screen flex font-mono text-t-light h-10 max-md:px-16">
+      <div className="bg-p1-hex px-30 w-screen flex font-mono text-t-light h-10 max-md:px-8">
         <div className="flex justify-between w-full">
           <div className="flex gap-3 items-center">
             <div className="text-xs flex items-center gap-1">
@@ -121,7 +121,7 @@ const Header = () => {
 
           {/* Desktop Contact Button */}
           {role !== "admin" && (
-            <Button href="/about" variant="primary" className="mt-4 md-max:hidden">
+            <Button href="/about" variant="primary" className="mt-4 max-md:hidden">
               Contact Us
             </Button>
           )}
