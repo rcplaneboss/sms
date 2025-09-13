@@ -1,23 +1,6 @@
 
 import { Button } from "@/components/ui/LinkAsButton";
-
-
-//   [
-//   {
-//     id: 1,
-//     title: "Arabic Teacher",
-//     location: "Remote",
-//     type: "Part-time",
-//     description: "Teach Arabic to students online, flexible hours.",
-//   },
-//   {
-//     id: 2,
-//     title: "Math Teacher (Western Track)",
-//     location: "On-site (Lagos)",
-//     type: "Full-time",
-//     description: "Prepare lesson plans and deliver engaging math classes.",
-//   },
-// ];
+import {prisma} from "@/prisma"
 
 export default async function VacancyPage() {
   const mockVacancies = [];
@@ -25,15 +8,19 @@ export default async function VacancyPage() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-    const response = await fetch(`${baseUrl}/api/vacancies`);
+    // const response = await fetch(`${baseUrl}/api/vacancies`);
+    const response = await prisma.vacancy.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    //
 
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!response) {
       throw new Error("Failed to fetch vacancies");
     }
 
-    mockVacancies.push(...data);
+    mockVacancies.push(...response);
   } catch (error) {
     console.error("Error fetching vacancies:", error);
   }
