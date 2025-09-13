@@ -196,3 +196,99 @@
 //     </form>
 //   );
 // }
+
+
+"use client";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
+function LoginFormInner({ className, ...props }: React.ComponentProps<"form">) {
+  const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Catch error query string from NextAuth
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      switch (errorParam) {
+        case "CredentialsSignin":
+          setError("Invalid email or password");
+          break;
+        case "NO_ACCOUNT":
+          setError("No account found. Please register first.");
+          break;
+        case "OAUTH_NOT_LINKED":
+          setError(
+            "This Google account is not linked. Please login with email/password first."
+          );
+          break;
+        default:
+          setError("Something went wrong. Please try again.");
+      }
+    }
+  }, [searchParams]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError("Invalid email or password");
+    } else {
+      const res = await fetch("/api/auth/session");
+      const session = await res.json();
+
+      const userRole = session?.user?.role;
+      if (userRole === "STUDENT") {
+        router.push("/student-dashboard");
+      } else if (userRole === "TEACHER") {
+        router.push("/teacher-dashboard");
+      } else if (userRole === "ADMIN") {
+        router.push("/admin-dashboard");
+      } else {
+        router.push("/");
+      }
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={cn("flex flex-col gap-6", className)}
+      {...props}
+    >
+      {/* ... your form body unchanged ... */}
+    </form>
+  );
+}
+
+export function LoginForm(props: React.ComponentProps<"form">) {
+  return (
+    <Suspense fallback={<p className="text-sm text-gray-500">Loading...</p>}>
+      <LoginFormInner {...props} />
+    </Suspense>
+  );
+}

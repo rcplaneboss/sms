@@ -24,7 +24,7 @@
 //   );
 // }
 
-
+"use client"
 import { Suspense } from "react";
 import TeacherRegister from "@/components/TeacherTabsClient";
 import { useSearchParams } from "next/navigation";
