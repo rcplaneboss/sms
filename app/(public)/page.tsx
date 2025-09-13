@@ -10,7 +10,7 @@ import VacancySection from "@/components/VacancySection";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center px-12 dark:bg-b-dark bg-b-light">
+    <main className="flex min-h-screen flex-col items-center max-md:px-6 px-12 dark:bg-b-dark bg-b-light">
       <Hero />
       <FeaturedSection />
       <AboutSection />
