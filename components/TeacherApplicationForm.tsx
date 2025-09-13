@@ -19,6 +19,7 @@ const steps = ["Education", "Experience", "Skills", "Documents", "Screening"];
 export default function TeacherApplicationForm({
   vacancyId,
   userId,
+  onComplete,
 }: {
   vacancyId: string;
   userId: string;
@@ -69,6 +70,7 @@ export default function TeacherApplicationForm({
 
     if (res.ok) {
       alert("Application submitted!");
+      onComplete();
     } else {
       alert("Something went wrong");
     }

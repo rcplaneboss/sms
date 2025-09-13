@@ -4,18 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { programSchema, ProgramFormValues } from "@/prisma/schema";
-import * as z from "zod";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/LinkAsButton";
 
-interface Program {
-  id: string;
-  name: string;
-  description?: string;
-  levelId: string;
-  trackId: string;
-}
-
+// Extend the interfaces to match the new Prisma schema with relationships
 interface Level {
   id: string;
   name: string;
@@ -26,12 +18,36 @@ interface Track {
   name: string;
 }
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
+interface Course {
+  id: string;
+  name: string;
+}
+
+interface Program {
+  id: string;
+  name: string;
+  description?: string;
+  levelId: string;
+  trackId: string;
+  courses: Course[];
+  subjects: Subject[];
+}
+
 const ProgramsPage = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+  const [programToDelete, setProgramToDelete] = useState<string | null>(null);
   const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
 
   const form = useForm<ProgramFormValues>({
@@ -41,28 +57,44 @@ const ProgramsPage = () => {
       description: "",
       levelId: "",
       trackId: "",
+      courseIds: [],
+      subjectIds: [],
     },
   });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [programsRes, levelsRes, tracksRes] = await Promise.all([
-        fetch("/api/programs"),
-        fetch("/api/levels"),
-        fetch("/api/tracks"),
-      ]);
+      const [programsRes, levelsRes, tracksRes, coursesRes, subjectsRes] =
+        await Promise.all([
+          fetch("/api/programs"),
+          fetch("/api/levels"),
+          fetch("/api/tracks"),
+          fetch("/api/courses"),
+          fetch("/api/subjects"),
+        ]);
 
-      if (!programsRes.ok || !levelsRes.ok || !tracksRes.ok)
+      if (
+        !programsRes.ok ||
+        !levelsRes.ok ||
+        !tracksRes.ok ||
+        !coursesRes.ok ||
+        !subjectsRes.ok
+      ) {
         throw new Error("Failed to fetch data");
+      }
 
       const programsData: Program[] = await programsRes.json();
       const levelsData: Level[] = await levelsRes.json();
       const tracksData: Track[] = await tracksRes.json();
+      const coursesData: Course[] = await coursesRes.json();
+      const subjectsData: Subject[] = await subjectsRes.json();
 
       setPrograms(programsData);
       setLevels(levelsData);
       setTracks(tracksData);
+      setCourses(coursesData);
+      setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data. Please try again.");
@@ -83,6 +115,8 @@ const ProgramsPage = () => {
         description: program.description,
         levelId: program.levelId,
         trackId: program.trackId,
+        courseIds: program.courses.map((course) => course.id),
+        subjectIds: program.subjects.map((subject) => subject.id),
       });
     } else {
       form.reset();
@@ -121,15 +155,16 @@ const ProgramsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this program?"
-    );
-    if (!confirmed) return;
+  const handleDeleteClick = (id: string) => {
+    setProgramToDelete(id);
+    setIsConfirmModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!programToDelete) return;
     const toastId = toast.loading("Deleting program...");
     try {
-      const res = await fetch(`/api/programs/${id}`, {
+      const res = await fetch(`/api/programs/${programToDelete}`, {
         method: "DELETE",
       });
 
@@ -142,7 +177,15 @@ const ProgramsPage = () => {
       toast.error("Failed to delete program. Please try again.", {
         id: toastId,
       });
+    } finally {
+      setIsConfirmModalOpen(false);
+      setProgramToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmModalOpen(false);
+    setProgramToDelete(null);
   };
 
   const getLevelName = (levelId: string) =>
@@ -159,7 +202,7 @@ const ProgramsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 relative">
       <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
@@ -173,7 +216,7 @@ const ProgramsPage = () => {
           </Button>
         </div>
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 overflow-x-scroll">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -185,16 +228,22 @@ const ProgramsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Track
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Courses
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Subjects
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {programs.length === 0 ? (
+              {programs?.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={6}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No programs found.
@@ -212,6 +261,12 @@ const ProgramsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getTrackName(program.trackId)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {program.courses?.length}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {program.subjects?.length}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
                         onClick={() => handleOpenModal(program)}
@@ -220,7 +275,7 @@ const ProgramsPage = () => {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(program.id)}
+                        onClick={() => handleDeleteClick(program.id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete
@@ -234,8 +289,8 @@ const ProgramsPage = () => {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center overflow-y-scroll ">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md  mt-64">
               <h2 className="text-xl font-semibold mb-4">
                 {currentProgram ? "Edit Program" : "Add Program"}
               </h2>
@@ -252,6 +307,24 @@ const ProgramsPage = () => {
                   {form.formState.errors.name && (
                     <p className="text-red-500 text-sm mt-1">
                       {form.formState.errors.name.message}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="duration"
+                    className="block text-sm font-medium"
+                  >
+                    Program Duration
+                  </label>
+                  <input
+                    id="duration"
+                    {...form.register("duration")}
+                    className="w-full border rounded-md px-3 py-2 mt-1"
+                  />
+                  {form.formState.errors.duration && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {form.formState.errors.duration.message}
                     </p>
                   )}
                 </div>
@@ -323,6 +396,56 @@ const ProgramsPage = () => {
                     </p>
                   )}
                 </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="subjectIds"
+                    className="block text-sm font-medium"
+                  >
+                    Subjects
+                  </label>
+                  <select
+                    id="subjectIds"
+                    multiple
+                    {...form.register("subjectIds")}
+                    className="w-full border rounded-md px-3 py-2 mt-1 h-32"
+                  >
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                  {form.formState.errors.subjectIds && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {form.formState.errors.subjectIds.message}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="courseIds"
+                    className="block text-sm font-medium"
+                  >
+                    Courses
+                  </label>
+                  <select
+                    id="courseIds"
+                    multiple
+                    {...form.register("courseIds")}
+                    className="w-full border rounded-md px-3 py-2 mt-1 h-32"
+                  >
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.name}
+                      </option>
+                    ))}
+                  </select>
+                  {form.formState.errors.courseIds && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {form.formState.errors.courseIds.message}
+                    </p>
+                  )}
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
@@ -346,6 +469,35 @@ const ProgramsPage = () => {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {isConfirmModalOpen && (
+          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-6 rounded-lg max-w-sm w-full text-center">
+              <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+              <p className="mb-4">
+                Are you sure you want to delete this program?
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={handleCancelDelete}
+                  variant={"danger"}
+                  size={"sm"}
+                  withIcon={false}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmDelete}
+                  variant={"danger"}
+                  size={"sm"}
+                  withIcon={false}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
         )}

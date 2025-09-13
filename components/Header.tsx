@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { publicNav, studentNav, teacherNav, adminNav } from "@/lib/navConfig";
 
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
 const Header = () => {
@@ -32,8 +32,8 @@ const Header = () => {
   if (role === "admin") items = adminNav;
 
   // Split the links for the "More" button functionality
-  const visibleItems = items.slice(0, 6);
-  const hiddenItems = items.slice(6);
+  const visibleItems = items.slice(0, 5);
+  const hiddenItems = items.slice(5);
 
   return (
     <main className="flex flex-col w-full sticky top-0 z-50">
@@ -78,9 +78,9 @@ const Header = () => {
             <RoleNav items={visibleItems} />
             {hiddenItems.length > 0 && (
               <div className="relative">
-                <Button 
-                  onClick={() => setShowMore(!showMore)} 
-                  variant="ghost" 
+                <Button
+                  onClick={() => setShowMore(!showMore)}
+                  variant="ghost"
                   className="flex items-center gap-1 text-sm font-medium"
                 >
                   More <Menu className="h-4 w-4" />
@@ -108,12 +108,23 @@ const Header = () => {
             )}
           </div>
 
+          {session?.user?.id && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="max-md:hidden cursor-pointer"
+            >
+              Log out
+            </Button>
+          )}
+
           {/* Desktop Contact Button */}
-          <div className="max-md:hidden">
-            <Button href="/about" variant="primary">
+          {role !== "admin" && (
+            <Button href="/about" variant="primary" className="mt-4 md-max:hidden">
               Contact Us
             </Button>
-          </div>
+          )}
 
           {/* Mobile Menu */}
           <div className="md:hidden">
@@ -138,9 +149,22 @@ const Header = () => {
                       {link.label}
                     </Link>
                   ))}
-                  <Button href="/about" variant="primary" className="mt-4">
-                    Contact Us
-                  </Button>
+                  {session?.user?.id && (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="max-md:hidden cursor-pointer"
+                    >
+                      Log out
+                    </Button>
+                  )}
+
+                  {role !== "admin" && (
+                    <Button href="/about" variant="primary" className="mt-4">
+                      Contact Us
+                    </Button>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>

@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,68 +15,68 @@ datasource db {
 // ---------------------------------------------------------------- //
 
 model User {
-  id            String    @id @default(uuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(STUDENT)
-  password      String?
-  accounts      Account[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String         @id @default(uuid())
+  name            String?
+  email           String         @unique
+  emailVerified   DateTime?
+  image           String?
+  role            Role           @default(STUDENT)
+  password        String?
+  accounts        Account[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
-  applications   Application[]
-  exams          Exam[]          @relation("TeacherExams")
-  attempts       Attempt[]
-  StudentProfile StudentProfile?
-  TeacherProfile TeacherProfile?
+  applications    Application[]
+  exams           Exam[]         @relation("TeacherExams")
+  attempts        Attempt[]
+  StudentProfile  StudentProfile?
+  TeacherProfile  TeacherProfile?
 
   // A student can be enrolled in multiple programs
   enrollments Enrollment[]
 }
 
 model StudentProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  id                String  @id @default(uuid())
+  userId            String  @unique
+  user              User    @relation(fields: [userId], references: [id])
 
-  fullName    String
-  dateOfBirth DateTime
-  age         String
-  gender      String
+  fullName          String
+  dateOfBirth       DateTime
+  age               String
+  gender            String
 
-  phoneNumber String
-  address     String
+  phoneNumber       String
+  address           String
 
-  guardianName    String?
-  guardianContact String?
+  guardianName      String?
+  guardianContact   String?
 
   previousEducation String?
 }
 
 model TeacherProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
 
-  fullName    String
-  phoneNumber String
-  address     String?
+  fullName          String
+  phoneNumber       String
+  address           String?
 
-  highestDegree   String?
-  certifications  String[]
-  experienceYears Int?
-  languages       String[]
-  techSkills      String[]
+  highestDegree     String?
+  certifications    String[]
+  experienceYears   Int?
+  languages         String[]
+  techSkills        String[]
 
-  bio       String?
-  equipment String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  bio               String?
+  equipment         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // A teacher can teach many courses
-  coursesTaught Course[] @relation("TeacherCourses")
+  coursesTaught     Course[] @relation("TeacherCourses")
 }
 
 model Account {
@@ -89,8 +92,8 @@ model Account {
   id_token          String?
   session_state     String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -103,37 +106,40 @@ model Account {
 
 // This model defines the academic levels (Primary, JSS, Secondary)
 model Level {
-  id       String    @id @default(uuid())
-  name     String    @unique // e.g., "Primary", "JSS", "Secondary"
-  duration Int? // e.g., 6 (years)
-  programs Program[]
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., "Primary", "JSS", "Secondary"
+  duration    String? // e.g., 6 (years)
+  programs    Program[]
 }
 
 // This model defines the academic tracks (Arabic, Western)
 model Track {
-  id       String    @id @default(uuid())
-  name     String    @unique // e.g., "Arabic", "Western"
-  programs Program[]
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., "Arabic", "Western"
+  programs    Program[]
 }
 
 // The main program model now relates to Levels and Tracks
 model Program {
-  id          String  @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
   description String?
+  duration    String?
 
   // New foreign keys referencing the Level and Track models
-  levelId String
-  level   Level  @relation(fields: [levelId], references: [id])
+  levelId     String
+  level       Level         @relation(fields: [levelId], references: [id])
 
-  trackId String
-  track   Track  @relation(fields: [trackId], references: [id])
+  trackId     String
+  track       Track         @relation(fields: [trackId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   // A program is composed of many courses
-  courses Course[]
+  courses     Course[]      @relation("ProgramToCourse")
+
+  subjects    Subject[]     @relation("ProgramToSubject")
 
   // Students are enrolled in a program through the Enrollment model
   enrollments Enrollment[]
@@ -142,46 +148,46 @@ model Program {
 
 // Represents a specific course (e.g., "JSS1 Mathematics")
 model Course {
-  id          String  @id @default(uuid())
-  name        String
+  id          String        @id @default(uuid())
+  name        String        @unique
   description String?
 
   // Link to the subject (e.g., "Mathematics")
-  subjectId String
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId   String
+  subject     Subject       @relation(fields: [subjectId], references: [id])
 
   // Link to the parent program
-  programId String
-  program   Program @relation(fields: [programId], references: [id])
+  programs    Program[]     @relation("ProgramToCourse")
 
   // Many-to-many relationship with teachers
-  teachers TeacherProfile[] @relation("TeacherCourses")
+  teachers    TeacherProfile[] @relation("TeacherCourses")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 // A generic subject (e.g., Mathematics, Physics, Quranic Studies)
 model Subject {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String        @id @default(uuid())
+  name        String        @unique
   description String?
   courses     Course[]
+  programs    Program[]     @relation("ProgramToSubject")
 }
 
 // Represents a student's enrollment in a specific program
 model Enrollment {
-  id        String @id @default(uuid())
-  studentId String
-  student   User   @relation(fields: [studentId], references: [id])
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
 
-  programId String
-  program   Program @relation(fields: [programId], references: [id])
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
 
-  status String @default("Active")
+  status      String   @default("Active")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([studentId, programId])
 }
@@ -191,35 +197,35 @@ model Enrollment {
 // ---------------------------------------------------------------- //
 
 model Application {
-  id     String @id @default(uuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
 
-  type AppType // STUDENT or TEACHER
+  type        AppType
 
-  programId String?
-  program   Program? @relation(fields: [programId], references: [id])
+  programId   String?
+  program     Program?          @relation(fields: [programId], references: [id])
 
-  vacancyId String?
-  vacancy   Vacancy? @relation(fields: [vacancyId], references: [id])
+  vacancyId   String?
+  vacancy     Vacancy?          @relation(fields: [vacancyId], references: [id])
 
-  details Json?
+  details     Json?
 
-  status    ApplicationStatus @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model Vacancy {
-  id           String   @id @default(uuid())
-  title        String
-  description  String
+  id          String        @id @default(uuid())
+  title       String
+  description String
   requirements String[]
-  location     String
-  type         JobType
+  location    String
+  type        JobType
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   applications Application[]
 }
@@ -229,29 +235,29 @@ model Vacancy {
 // ---------------------------------------------------------------- //
 
 model Exam {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
-  createdBy   User       @relation("TeacherExams", fields: [createdById], references: [id])
+  createdBy   User         @relation("TeacherExams", fields: [createdById], references: [id])
   createdById String
   questions   Question[]
   attempts    Attempt[]
 }
 
 model Question {
-  id     String       @id @default(uuid())
-  text   String
-  type   QuestionType
-  exam   Exam         @relation(fields: [examId], references: [id])
-  examId String
+  id          String       @id @default(uuid())
+  text        String
+  type        QuestionType
+  exam        Exam         @relation(fields: [examId], references: [id])
+  examId      String
 }
 
 model Attempt {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  exam   Exam   @relation(fields: [examId], references: [id])
-  examId String
-  score  Int?
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  exam        Exam     @relation(fields: [examId], references: [id])
+  examId      String
+  score       Int?
 }
 
 // ---------------------------------------------------------------- //

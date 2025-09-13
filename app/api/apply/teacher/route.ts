@@ -44,7 +44,7 @@ export async function POST(req: Request) {
         );
       }
 
-      // Hash the password before creating the user
+      
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(data.password, salt);
 
@@ -52,8 +52,8 @@ export async function POST(req: Request) {
         data: {
           name: data.username,
           email: data.email,
-          role: "ADMIN",
-          password: hashedPassword, // Use the hashed password here
+          role: "TEACHER",
+          password: hashedPassword, 
         },
       });
 

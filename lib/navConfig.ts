@@ -34,4 +34,8 @@ export const adminNav = [
   { href: "/reports", label: "Reports" },
   { href: "/settings", label: "Settings" },
   { href: "/admin-program", label: "Programs" },
+  { href: "/levels", label: "Levels" },
+  { href: "/tracks", label: "Tracks" },
+  { href: "/subjects", label: "Subjects" },
+  { href: "/courses", label: "Courses" },
 ];

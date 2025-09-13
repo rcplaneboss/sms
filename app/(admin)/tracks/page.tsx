@@ -3,41 +3,39 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { levelSchema, LevelFormValues } from "@/prisma/schema";
+import { trackSchema, TrackFormValues } from "@/prisma/schema";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/LinkAsButton";
 
 // Mock type definition
-interface Level {
+interface Track {
   id: string;
   name: string;
-  duration?: string;
 }
 
-const LevelsPage = () => {
-  const [levels, setLevels] = useState<Level[]>([]);
+const TracksPage = () => {
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
 
-  const form = useForm<LevelFormValues>({
-    resolver: zodResolver(levelSchema),
+  const form = useForm<TrackFormValues>({
+    resolver: zodResolver(trackSchema),
     defaultValues: {
       name: "",
-      duration: "",
     },
   });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/levels");
-      if (!res.ok) throw new Error("Failed to fetch levels");
-      const data: Level[] = await res.json();
-      setLevels(data);
+      const res = await fetch("/api/tracks");
+      if (!res.ok) throw new Error("Failed to fetch tracks");
+      const data: Track[] = await res.json();
+      setTracks(data);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to load levels. Please try again.");
+      toast.error("Failed to load tracks. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,12 +45,11 @@ const LevelsPage = () => {
     fetchData();
   }, []);
 
-  const handleOpenModal = (level: Level | null = null) => {
-    setCurrentLevel(level);
-    if (level) {
+  const handleOpenModal = (track: Track | null = null) => {
+    setCurrentTrack(track);
+    if (track) {
       form.reset({
-        name: level.name,
-        duration: level.duration,
+        name: track.name,
       });
     } else {
       form.reset();
@@ -62,16 +59,14 @@ const LevelsPage = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setCurrentLevel(null);
+    setCurrentTrack(null);
   };
 
-  const onSubmit = async (data: LevelFormValues) => {
-    const toastId = toast.loading("Saving level...");
+  const onSubmit = async (data: TrackFormValues) => {
+    const toastId = toast.loading("Saving track...");
     try {
-      const isEditing = !!currentLevel;
-      const url = isEditing
-        ? `/api/levels/${currentLevel?.id}`
-        : "/api/levels";
+      const isEditing = !!currentTrack;
+      const url = isEditing ? `/api/tracks/${currentTrack?.id}` : "/api/tracks";
       const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -80,36 +75,36 @@ const LevelsPage = () => {
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) throw new Error("Failed to save level");
+      if (!res.ok) throw new Error("Failed to save track");
 
       await fetchData();
       handleCloseModal();
-      toast.success("Level saved successfully!", { id: toastId });
+      toast.success("Track saved successfully!", { id: toastId });
     } catch (error) {
-      console.error("Error saving level:", error);
-      toast.error("Failed to save level. Please try again.", { id: toastId });
+      console.error("Error saving track:", error);
+      toast.error("Failed to save track. Please try again.", { id: toastId });
     }
   };
 
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this level?"
+      "Are you sure you want to delete this track?"
     );
     if (!confirmed) return;
 
-    const toastId = toast.loading("Deleting level...");
+    const toastId = toast.loading("Deleting track...");
     try {
-      const res = await fetch(`/api/levels/${id}`, {
+      const res = await fetch(`/api/tracks/${id}`, {
         method: "DELETE",
       });
 
-      if (!res.ok) throw new Error("Failed to delete level");
+      if (!res.ok) throw new Error("Failed to delete track");
 
       await fetchData();
-      toast.success("Level deleted successfully!", { id: toastId });
+      toast.success("Track deleted successfully!", { id: toastId });
     } catch (error) {
-      console.error("Error deleting level:", error);
-      toast.error("Failed to delete level. Please try again.", { id: toastId });
+      console.error("Error deleting track:", error);
+      toast.error("Failed to delete track. Please try again.", { id: toastId });
     }
   };
 
@@ -126,19 +121,16 @@ const LevelsPage = () => {
       <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Academic Levels</h1>
+          <h1 className="text-3xl font-bold">Academic Tracks</h1>
           <Button
             onClick={() => handleOpenModal()}
-            variant={"primary"}
-            size={"sm"}
-            withIcon={true}
+            variant="primary"
+            size="sm"
           >
-            Add Level
+            Add Track
           </Button>
         </div>
 
-        {/* This section would be a reusable <DataTable> component */}
-        {/* Replace with shadcn <Table>, <TableHeader>, etc. */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -146,43 +138,38 @@ const LevelsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
-                </th>
+
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {levels.length === 0 ? (
+              {tracks.length === 0 ? (
                 <tr>
                   <td
                     colSpan={3}
                     className="px-6 py-4 text-center text-gray-500"
                   >
-                    No levels found.
+                    No tracks found.
                   </td>
                 </tr>
               ) : (
-                levels.map((level) => (
-                  <tr key={level.id}>
+                tracks.map((track) => (
+                  <tr key={track.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {level.name}
+                      {track.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {level.duration || "-"}
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {/* Replace with shadcn <Button variant="ghost"> */}
                       <button
-                        onClick={() => handleOpenModal(level)}
+                        onClick={() => handleOpenModal(track)}
                         className="text-indigo-600 hover:text-indigo-900 mr-2"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(level.id)}
+                        onClick={() => handleDelete(track.id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete
@@ -195,20 +182,17 @@ const LevelsPage = () => {
           </table>
         </div>
 
-        {/* Modal UI */}
         {isModalOpen && (
-          // Replace with shadcn <Dialog>
           <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
             <div className="bg-white p-6 rounded-lg w-full max-w-md">
               <h2 className="text-xl font-semibold mb-4">
-                {currentLevel ? "Edit Level" : "Add Level"}
+                {currentTrack ? "Edit Track" : "Add Track"}
               </h2>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="mb-4">
                   <label htmlFor="name" className="block text-sm font-medium">
-                    Level Name
+                    Track Name
                   </label>
-                  {/* Replace with shadcn <Input> */}
                   <input
                     id="name"
                     {...form.register("name")}
@@ -220,40 +204,24 @@ const LevelsPage = () => {
                     </p>
                   )}
                 </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="description"
-                    className="block text-sm font-medium"
-                  >
-                    Duration
-                  </label>
-                  <textarea
-                    id="duration"
-                    {...form.register("duration")}
-                    className="w-full border rounded-md px-3 py-2 mt-1"
-                  />
-                  {form.formState.errors.duration && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {form.formState.errors.duration.message}
-                    </p>
-                  )}
-                </div>
+
                 <div className="flex justify-end gap-2">
-                  {/* Replace with shadcn <Button variant="outline"> */}
-                  <button
+                  <Button
                     type="button"
                     onClick={handleCloseModal}
-                    className="px-4 py-2 border rounded-md"
+                    variant="secondary"
+                    size="sm"
+                    icon={false}
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                    variant="primary"
                   >
                     {form.formState.isSubmitting ? "Saving..." : "Save"}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -264,4 +232,4 @@ const LevelsPage = () => {
   );
 };
 
-export default LevelsPage;
+export default TracksPage;

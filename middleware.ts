@@ -1,6 +1,5 @@
-// middleware.ts
 import { NextResponse } from "next/server";
-import { auth } from "@/auth"; // Assuming your auth.ts file is at the root
+import { auth } from "@/auth"; 
 
 // Define protected routes and the roles that can access them
 const roleBasedAccess = {
@@ -14,6 +13,10 @@ const roleBasedAccess = {
     "/reports",
     "/settings",
     "/admin-program",
+    "/levels",
+    "/tracks",
+    "/subjects",
+    "/courses",
   ],
   teacher: ["/teacher-dashboard", "/classes", "/exams", "/grading"],
   student: [
@@ -50,7 +53,7 @@ export default auth((req) => {
 
   // Case 1: Handle Public Paths
   // If the user is authenticated and on a public page, redirect them to their dashboard
-  if (publicPaths.includes(pathname)) {
+  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/")) {
     if (user) {
       const userRole = user.user?.role as keyof typeof roleBasedAccess;
       const redirectTo = roleBasedAccess[userRole.toLowerCase()]?.[0];

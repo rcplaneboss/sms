@@ -76,7 +76,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   const result = await signIn("credentials", {
     email,
     password,
-    redirect: false, // we’re handling redirect manually
+    redirect: false,
   });
 
   setLoading(false);

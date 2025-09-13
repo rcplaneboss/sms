@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import {prisma} from "@/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       if (isUser) {
         return NextResponse.json(
           { success: false, message: "User with this email already exists" },
-          { status: 409 } // 409 Conflict fits better
+          { status: 409 } 
         );
       }
 

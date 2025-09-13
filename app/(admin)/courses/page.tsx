@@ -3,41 +3,54 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { levelSchema, LevelFormValues } from "@/prisma/schema";
+import { courseSchema, CourseFormValues } from "@/prisma/schema";
 import { Toaster, toast } from "sonner";
-import { Button } from "@/components/ui/LinkAsButton";
 
-// Mock type definition
-interface Level {
+
+interface Course {
   id: string;
   name: string;
-  duration?: string;
+  description?: string;
+  subjectId: string;
+  subject?: { name: string };
 }
 
-const LevelsPage = () => {
-  const [levels, setLevels] = useState<Level[]>([]);
+interface Subject {
+  id: string;
+  name: string;
+}
+
+const CoursesPage = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [currentLevel, setCurrentLevel] = useState<Level | null>(null);
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
 
-  const form = useForm<LevelFormValues>({
-    resolver: zodResolver(levelSchema),
-    defaultValues: {
-      name: "",
-      duration: "",
-    },
+  const form = useForm<CourseFormValues>({
+    resolver: zodResolver(courseSchema),
+    defaultValues: { name: "", description: "", subjectId: "" },
   });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/levels");
-      if (!res.ok) throw new Error("Failed to fetch levels");
-      const data: Level[] = await res.json();
-      setLevels(data);
+      const [coursesRes, subjectsRes] = await Promise.all([
+        fetch("/api/courses"),
+        fetch("/api/subjects"),
+      ]);
+
+      if (!coursesRes.ok || !subjectsRes.ok)
+        throw new Error("Failed to fetch data");
+
+      const coursesData: Course[] = await coursesRes.json();
+      const subjectsData: Subject[] = await subjectsRes.json();
+
+      setCourses(coursesData);
+      setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to load levels. Please try again.");
+      toast.error("Failed to load data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,12 +60,13 @@ const LevelsPage = () => {
     fetchData();
   }, []);
 
-  const handleOpenModal = (level: Level | null = null) => {
-    setCurrentLevel(level);
-    if (level) {
+  const handleOpenModal = (course: Course | null = null) => {
+    setCurrentCourse(course);
+    if (course) {
       form.reset({
-        name: level.name,
-        duration: level.duration,
+        name: course.name,
+        description: course.description,
+        subjectId: course.subjectId,
       });
     } else {
       form.reset();
@@ -62,16 +76,16 @@ const LevelsPage = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setCurrentLevel(null);
+    setCurrentCourse(null);
   };
 
-  const onSubmit = async (data: LevelFormValues) => {
-    const toastId = toast.loading("Saving level...");
+  const onSubmit = async (data: CourseFormValues) => {
+    const toastId = toast.loading("Saving course...");
     try {
-      const isEditing = !!currentLevel;
+      const isEditing = !!currentCourse;
       const url = isEditing
-        ? `/api/levels/${currentLevel?.id}`
-        : "/api/levels";
+        ? `/api/courses/${currentCourse?.id}`
+        : "/api/courses";
       const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -80,38 +94,40 @@ const LevelsPage = () => {
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) throw new Error("Failed to save level");
+      if (!res.ok) throw new Error("Failed to save course");
 
       await fetchData();
       handleCloseModal();
-      toast.success("Level saved successfully!", { id: toastId });
+      toast.success("Course saved successfully!", { id: toastId });
     } catch (error) {
-      console.error("Error saving level:", error);
-      toast.error("Failed to save level. Please try again.", { id: toastId });
+      console.error("Error saving course:", error);
+      toast.error("Failed to save course. Please try again.", { id: toastId });
     }
   };
 
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this level?"
+      "Are you sure you want to delete this course?"
     );
     if (!confirmed) return;
 
-    const toastId = toast.loading("Deleting level...");
+    const toastId = toast.loading("Deleting course...");
     try {
-      const res = await fetch(`/api/levels/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete level");
+      const res = await fetch(`/api/courses/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete course");
 
       await fetchData();
-      toast.success("Level deleted successfully!", { id: toastId });
+      toast.success("Course deleted successfully!", { id: toastId });
     } catch (error) {
-      console.error("Error deleting level:", error);
-      toast.error("Failed to delete level. Please try again.", { id: toastId });
+      console.error("Error deleting course:", error);
+      toast.error("Failed to delete course. Please try again.", {
+        id: toastId,
+      });
     }
   };
+
+  const getSubjectName = (subjectId: string) =>
+    subjects.find((s) => s.id === subjectId)?.name || "N/A";
 
   if (loading) {
     return (
@@ -126,19 +142,15 @@ const LevelsPage = () => {
       <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Academic Levels</h1>
-          <Button
+          <h1 className="text-3xl font-bold">Courses</h1>
+          <button
             onClick={() => handleOpenModal()}
-            variant={"primary"}
-            size={"sm"}
-            withIcon={true}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
           >
-            Add Level
-          </Button>
+            Add Course
+          </button>
         </div>
 
-        {/* This section would be a reusable <DataTable> component */}
-        {/* Replace with shadcn <Table>, <TableHeader>, etc. */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -147,7 +159,7 @@ const LevelsPage = () => {
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
+                  Subject
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -155,34 +167,33 @@ const LevelsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {levels.length === 0 ? (
+              {courses.length === 0 ? (
                 <tr>
                   <td
                     colSpan={3}
                     className="px-6 py-4 text-center text-gray-500"
                   >
-                    No levels found.
+                    No courses found.
                   </td>
                 </tr>
               ) : (
-                levels.map((level) => (
-                  <tr key={level.id}>
+                courses.map((course) => (
+                  <tr key={course.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {level.name}
+                      {course.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {level.duration || "-"}
+                      {getSubjectName(course.subjectId)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {/* Replace with shadcn <Button variant="ghost"> */}
                       <button
-                        onClick={() => handleOpenModal(level)}
+                        onClick={() => handleOpenModal(course)}
                         className="text-indigo-600 hover:text-indigo-900 mr-2"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(level.id)}
+                        onClick={() => handleDelete(course.id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete
@@ -195,20 +206,17 @@ const LevelsPage = () => {
           </table>
         </div>
 
-        {/* Modal UI */}
         {isModalOpen && (
-          // Replace with shadcn <Dialog>
           <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
             <div className="bg-white p-6 rounded-lg w-full max-w-md">
               <h2 className="text-xl font-semibold mb-4">
-                {currentLevel ? "Edit Level" : "Add Level"}
+                {currentCourse ? "Edit Course" : "Add Course"}
               </h2>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="mb-4">
                   <label htmlFor="name" className="block text-sm font-medium">
-                    Level Name
+                    Course Name
                   </label>
-                  {/* Replace with shadcn <Input> */}
                   <input
                     id="name"
                     {...form.register("name")}
@@ -225,21 +233,45 @@ const LevelsPage = () => {
                     htmlFor="description"
                     className="block text-sm font-medium"
                   >
-                    Duration
+                    Description
                   </label>
                   <textarea
-                    id="duration"
-                    {...form.register("duration")}
+                    id="description"
+                    {...form.register("description")}
                     className="w-full border rounded-md px-3 py-2 mt-1"
                   />
-                  {form.formState.errors.duration && (
+                  {form.formState.errors.description && (
                     <p className="text-red-500 text-sm mt-1">
-                      {form.formState.errors.duration.message}
+                      {form.formState.errors.description.message}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="subjectId"
+                    className="block text-sm font-medium"
+                  >
+                    Subject
+                  </label>
+                  <select
+                    id="subjectId"
+                    {...form.register("subjectId")}
+                    className="w-full border rounded-md px-3 py-2 mt-1"
+                  >
+                    <option value="">Select a Subject</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                  {form.formState.errors.subjectId && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {form.formState.errors.subjectId.message}
                     </p>
                   )}
                 </div>
                 <div className="flex justify-end gap-2">
-                  {/* Replace with shadcn <Button variant="outline"> */}
                   <button
                     type="button"
                     onClick={handleCloseModal}
@@ -264,4 +296,4 @@ const LevelsPage = () => {
   );
 };
 
-export default LevelsPage;
+export default CoursesPage;

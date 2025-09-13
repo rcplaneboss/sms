@@ -1,24 +1,44 @@
 
 import { Button } from "@/components/ui/LinkAsButton";
 
-const mockVacancies = [
-  {
-    id: 1,
-    title: "Arabic Teacher",
-    location: "Remote",
-    type: "Part-time",
-    description: "Teach Arabic to students online, flexible hours.",
-  },
-  {
-    id: 2,
-    title: "Math Teacher (Western Track)",
-    location: "On-site (Lagos)",
-    type: "Full-time",
-    description: "Prepare lesson plans and deliver engaging math classes.",
-  },
-];
 
-export default function VacancyPage() {
+//   [
+//   {
+//     id: 1,
+//     title: "Arabic Teacher",
+//     location: "Remote",
+//     type: "Part-time",
+//     description: "Teach Arabic to students online, flexible hours.",
+//   },
+//   {
+//     id: 2,
+//     title: "Math Teacher (Western Track)",
+//     location: "On-site (Lagos)",
+//     type: "Full-time",
+//     description: "Prepare lesson plans and deliver engaging math classes.",
+//   },
+// ];
+
+export default async function VacancyPage() {
+  const mockVacancies = [];
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    const response = await fetch(`${baseUrl}/api/vacancies`);
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch vacancies");
+    }
+
+    mockVacancies.push(...data);
+  } catch (error) {
+    console.error("Error fetching vacancies:", error);
+  }
+
+  
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
       <h1 className="text-4xl font-bold text-slate-900 dark:text-white">

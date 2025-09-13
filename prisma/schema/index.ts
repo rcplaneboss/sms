@@ -78,12 +78,22 @@ export const teacherProfileSchema = z.object({
 
 export const levelSchema = z.object({
   name: z.string().min(1, { message: 'Level name is required.' }),
-  description: z.string().optional(),
+  duration: z.string().optional(),
 });
 
 export const trackSchema = z.object({
   name: z.string().min(1, { message: 'Track name is required.' }),
+});
+
+export const subjectSchema = z.object({
+  name: z.string().min(1, { message: 'Subject name is required.' }),
   description: z.string().optional(),
+});
+
+export const courseSchema = z.object({
+  name: z.string().min(1, { message: 'Course name is required.' }),
+  description: z.string().optional(),
+  subjectId: z.string().min(1, { message: 'Subject is required.' }),
 });
 
 export const programSchema = z.object({
@@ -91,7 +101,25 @@ export const programSchema = z.object({
   description: z.string().optional(),
   levelId: z.string().min(1, { message: 'Level is required.' }),
   trackId: z.string().min(1, { message: 'Track is required.' }),
+  courseIds: z.array(z.string()).optional(),
+  subjectIds: z.array(z.string()).optional(),
 });
+
+export const vacancySchema = z.object({
+  title: z.string().min(1, { message: "Job title is required." }),
+  description: z.string().min(1, { message: "Description is required." }),
+  requirements: z.string().optional(), // We'll handle this as a comma-separated string on the frontend.
+  location: z.string().min(1, { message: "Location is required." }),
+  type: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"], {
+    errorMap: () => ({ message: "Job type is required." }),
+  }),
+});
+
+export type VacancyFormValues = z.infer<typeof vacancyFormSchema>;
+
+export type SubjectFormValues = z.infer<typeof subjectSchema>;
+
+export type CourseFormValues = z.infer<typeof courseSchema>;
 
 export type LevelFormValues = z.infer<typeof levelSchema>;
 
