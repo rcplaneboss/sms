@@ -66,7 +66,7 @@ const Header = () => {
       </div>
 
       {/* Main Nav */}
-      <div className="w-full bg-white h-16 px-30 max-md:px-16 flex justify-center items-center dark:bg-black max-md:pl-24">
+      <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center items-center dark:bg-black max-md:pl-24">
         <div className="flex justify-between w-full items-center">
           {/* Logo */}
           <div>
@@ -121,7 +121,11 @@ const Header = () => {
 
           {/* Desktop Contact Button */}
           {role !== "admin" && (
-            <Button href="/about" variant="primary" className="mt-4 max-md:hidden">
+            <Button
+              href="/about"
+              variant="primary"
+              className="mt-4 max-md:hidden"
+            >
               Contact Us
             </Button>
           )}
