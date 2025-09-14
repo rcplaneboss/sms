@@ -58,6 +58,7 @@ export default function TeacherProfileForm({ userId, onComplete }: Props) {
       } else {
         const res = await response.json();
         setErr(res.error || "Something went wrong");
+        consolee.log("Error response:", res);
       }
     } catch (error: any) {
       setErr(error.message || "Something went wrong");
