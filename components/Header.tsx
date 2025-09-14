@@ -67,7 +67,6 @@ const Header = () => {
 
       {/* Main Nav */}
       <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center max-md:justify-between items-center dark:bg-black">
-
         <div className="flex justify-between w-full items-center">
           {/* Logo */}
           <div>
@@ -125,7 +124,7 @@ const Header = () => {
             <Button
               href="/about"
               variant="primary"
-              className="mt-4 max-md:hidden"
+              className=" max-md:hidden"
             >
               Contact Us
             </Button>
@@ -170,7 +169,16 @@ const Header = () => {
                       Contact Us
                     </Button>
                   )}
-                  
+                  {session?.user?.id && (
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="max-md:hidden cursor-pointer"
+                    >
+                      Log out
+                    </Button>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
