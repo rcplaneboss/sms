@@ -81,15 +81,25 @@ export async function POST(req: Request) {
       });
 
       const data = teacherProfileSchema.parse(rawData);
+      let profile;
+      try {
 
-      const profile = await prisma.teacherProfile.create({
-        data: {
-          ...data,
-          user: {
-            connect: { id: userId },
+        profile = await prisma.teacherProfile.create({
+          data: {
+            ...data,
+            user: {
+              connect: { id: userId },
+            },
           },
-        },
-      });
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("Unique constraint")) {
+          return NextResponse.json(
+            { error: "Profile already exists for this user." },
+            { status: 409 }
+          );
+        }
+      }
 
       return NextResponse.json({
         message: "Profile saved successfully.",
