@@ -177,7 +177,7 @@ const AdminApplicationsPage = () => {
                     <>
                       <Button
                         onClick={() => handleOpenModal(app, "reject")}
-                        variant={"destructive"}
+                        variant={"danger"}
                         size={"sm"}
                         withIcon={false}
                       >

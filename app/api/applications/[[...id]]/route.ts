@@ -81,7 +81,8 @@ export async function POST(req: Request) {
 
     const emailSubject = "Interview Scheduled";
     await sendEmail(
-      updatedApplication.user.email,
+      // updatedApplication.user.email,
+      'qosimabdulrahman7@gmail.com',
       emailSubject,
       validatedData.message
     );
@@ -143,7 +144,8 @@ export async function PUT(req: Request) {
         ? "Application Approved"
         : "Application Update";
     await sendEmail(
-      updatedApplication.user.email,
+      // updatedApplication.user.email,
+      'qosimabdulrahman7@gmail.com',
       emailSubject,
       validatedData.message
     );

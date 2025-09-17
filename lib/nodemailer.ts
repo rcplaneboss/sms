@@ -1,10 +1,10 @@
 
 import nodemailer from "nodemailer";
 // Create a Nodemailer transporter using SMTP details
-// IMPORTANT: Replace the placeholder values with your actual email service credentials
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
+  port: 465,
   secure: true, 
   auth: {
     user: process.env.EMAIL_USER!,
@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to: string, subject: string, text: string) => {
   try {
     const mailOptions = {
-      from: "qosimrc@gmail.com", // Sender address
+      from: "Al-Itqan Online School", // Sender address
       to: to,
       subject: subject,
       text: text,
