@@ -14,20 +14,21 @@ interface Application {
   vacancy: {
     title: string;
   } | null;
+  status: "PENDING" | "INTERVIEW_SCHEDULED" | "APPROVED" | "REJECTED";
 }
 
 const AdminApplicationsPage = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [currentApplicationId, setCurrentApplicationId] = useState<string | null>(null);
-  const [currentStatus, setCurrentStatus] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [currentApplication, setCurrentApplication] = useState<Application | null>(null);
   const [message, setMessage] = useState<string>("");
+  const [actionType, setActionType] = useState<"interview" | "approve" | "reject" | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/applications");
+      const res = await fetch("/api/admin/applications");
       if (!res.ok) throw new Error("Failed to fetch applications");
       const data: Application[] = await res.json();
       setApplications(data);
@@ -43,18 +44,27 @@ const AdminApplicationsPage = () => {
     fetchData();
   }, []);
 
-  const handleStatusChange = async () => {
-    if (!currentApplicationId || !currentStatus) return;
+  const handleAction = async () => {
+    if (!currentApplication) return;
 
     const toastId = toast.loading("Updating application...");
     try {
-      const res = await fetch(`/api/applications/${currentApplicationId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: currentStatus, message }),
-      });
+      let res;
+      if (actionType === "interview") {
+        res = await fetch("/api/admin/applications/schedule-interview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: currentApplication.id, message }),
+        });
+      } else if (actionType === "approve" || actionType === "reject") {
+        res = await fetch(`/api/admin/applications/${currentApplication.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: actionType === "approve" ? "APPROVED" : "REJECTED", message }),
+        });
+      }
 
-      if (!res.ok) throw new Error("Failed to update status");
+      if (!res || !res.ok) throw new Error("Failed to update status");
 
       await fetchData();
       toast.success("Application status updated!", { id: toastId });
@@ -65,18 +75,24 @@ const AdminApplicationsPage = () => {
     }
   };
 
-  const handleOpenModal = (appId: string, status: "APPROVED" | "REJECTED") => {
-    setCurrentApplicationId(appId);
-    setCurrentStatus(status);
-    setMessage(status === "APPROVED" ? "Congratulations! Your application has been approved. Please log in to view the terms and conditions." : "Thank you for your application. We have decided not to proceed at this time.");
+  const handleOpenModal = (app: Application, type: "interview" | "approve" | "reject") => {
+    setCurrentApplication(app);
+    setActionType(type);
+    if (type === "interview") {
+      setMessage("Hello [Teacher's Name],\n\nThank you for your application. We would like to schedule an interview with you. Please reply to this email to coordinate a time that works for you. If you have any questions, you can reach us on WhatsApp at [Your WhatsApp Number].\n\nBest regards,\nThe Team");
+    } else if (type === "approve") {
+      setMessage("Congratulations! Your application has been approved. Please log in to view the terms and conditions.");
+    } else if (type === "reject") {
+      setMessage("Thank you for your application. We have decided not to proceed at this time.");
+    }
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setCurrentApplicationId(null);
-    setCurrentStatus(null);
+    setCurrentApplication(null);
     setMessage("");
+    setActionType(null);
   };
 
   if (loading) {
@@ -112,27 +128,44 @@ const AdminApplicationsPage = () => {
                   <p className="text-gray-600 dark:text-gray-400 mb-1">
                     <span className="font-semibold">Email:</span> {app.user.email}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-1">
                     <span className="font-semibold">Applying For:</span> {app.vacancy?.title || "N/A"}
+                  </p>
+                  <p className={`text-sm font-semibold mt-2 ${app.status === 'PENDING' ? 'text-blue-500' : 'text-green-500'}`}>
+                    Status: {app.status}
                   </p>
                 </div>
                 <div className="flex justify-end space-x-2 mt-4">
-                  <Button
-                    onClick={() => handleOpenModal(app.id, "REJECTED")}
-                    variant={"destructive"}
-                    size={"sm"}
-                    withIcon={false}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    onClick={() => handleOpenModal(app.id, "APPROVED")}
-                    variant={"primary"}
-                    size={"sm"}
-                    withIcon={false}
-                  >
-                    Approve
-                  </Button>
+                  {app.status === 'PENDING' && (
+                    <Button
+                      onClick={() => handleOpenModal(app, "interview")}
+                      variant={"secondary"}
+                      size={"sm"}
+                      withIcon={false}
+                    >
+                      Schedule Interview
+                    </Button>
+                  )}
+                  {app.status === 'INTERVIEW_SCHEDULED' && (
+                    <>
+                      <Button
+                        onClick={() => handleOpenModal(app, "reject")}
+                        variant={"destructive"}
+                        size={"sm"}
+                        withIcon={false}
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        onClick={() => handleOpenModal(app, "approve")}
+                        variant={"primary"}
+                        size={"sm"}
+                        withIcon={false}
+                      >
+                        Approve
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -143,7 +176,11 @@ const AdminApplicationsPage = () => {
           <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-70 dark:bg-gray-950 dark:bg-opacity-80 flex items-center justify-center p-4 transition-colors duration-300">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-lg transform transition-all duration-300 scale-100">
               <h2 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">
-                {currentStatus === "APPROVED" ? "Approve Application" : "Reject Application"}
+                {actionType === "interview"
+                  ? "Schedule Interview"
+                  : actionType === "approve"
+                  ? "Approve Application"
+                  : "Reject Application"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
                 Edit the email message to be sent to the applicant.
@@ -164,12 +201,22 @@ const AdminApplicationsPage = () => {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleStatusChange}
-                  variant={currentStatus === "APPROVED" ? "primary" : "destructive"}
+                  onClick={handleAction}
+                  variant={
+                    actionType === "approve"
+                      ? "primary"
+                      : actionType === "reject"
+                      ? "destructive"
+                      : "primary"
+                  }
                   size={"lg"}
                   withIcon={false}
                 >
-                  {currentStatus === "APPROVED" ? "Send Approval" : "Send Rejection"}
+                  {actionType === "interview"
+                    ? "Send Interview Details"
+                    : actionType === "approve"
+                    ? "Send Approval"
+                    : "Send Rejection"}
                 </Button>
               </div>
             </div>

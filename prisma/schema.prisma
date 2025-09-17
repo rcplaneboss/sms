@@ -295,6 +295,7 @@ enum AppType {
 
 enum ApplicationStatus {
   PENDING
+  INTERVIEW_SCHEDULED
   APPROVED
   REJECTED
 }
