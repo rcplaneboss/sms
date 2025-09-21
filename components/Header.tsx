@@ -120,7 +120,7 @@ const Header = () => {
           )}
 
           {/* Desktop Contact Button */}
-          {role !== "admin" && (
+          {!(["admin", "teacher", "student"].includes(role)) && (
             <Button
               href="/about"
               variant="primary"
