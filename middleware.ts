@@ -18,7 +18,14 @@ const roleBasedAccess = {
     "/subjects",
     "/courses",
   ],
-  teacher: ["/teacher-dashboard", "/classes", "/exams", "/grading", "/teacher-onboard"],
+  teacher: [
+    "/teacher-dashboard",
+    "/classes",
+    "/exams",
+    "/grading",
+    "/teacher-onboard",
+    "/assigned-courses",
+  ],
   student: [
     "/student-dashboard",
     "/exams",

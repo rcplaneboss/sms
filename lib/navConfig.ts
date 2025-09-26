@@ -22,6 +22,7 @@ export const teacherNav = [
   { href: "/classes", label: "Classes" },
   { href: "/exams", label: "Exams" },
   { href: "/grading", label: "Grading" },
+  { href: "/assigned-courses", label: "My Assignments" },
 ];
 
 export const adminNav = [
@@ -38,4 +39,5 @@ export const adminNav = [
   { href: "/tracks", label: "Tracks" },
   { href: "/subjects", label: "Subjects" },
   { href: "/courses", label: "Courses" },
+  
 ];

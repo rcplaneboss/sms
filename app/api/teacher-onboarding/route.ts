@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/prisma";
 import { ZodError, z } from "zod";
+import { auth } from '@/auth';
 
 
 // Zod schema to validate the incoming request body
