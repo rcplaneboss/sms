@@ -9,7 +9,7 @@ import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/LinkAsButton"; 
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi'; 
 
-// Define a separate Zod schema for the form
+
 const pricingFormSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   amountMinor: z.coerce.number().int().positive({ message: "Amount must be a positive integer." }),
