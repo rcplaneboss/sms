@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,297 +6,23 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+// This file is the Prisma schema.
+// It defines the database models and their relationships.
 
-// ---------------------------------------------------------------- //
-// Core User Models
-// ---------------------------------------------------------------- //
-
-model User {
-  id              String          @id @default(uuid())
-  name            String?
-  email           String          @unique
-  emailVerified   DateTime?
-  image           String?
-  role            Role            @default(STUDENT)
-  password        String?
-  accounts        Account[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  applications    Application[]
-  exams           Exam[]          @relation("TeacherExams")
-  attempts        Attempt[]
-  StudentProfile  StudentProfile?
-  TeacherProfile  TeacherProfile?
-
-  // A student can be enrolled in multiple programs
-  enrollments Enrollment[]
-}
-
-model StudentProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
-
-  fullName          String
-  dateOfBirth       DateTime
-  age               String
-  gender            String
-
-  phoneNumber       String
-  address           String
-
-  guardianName      String?
-  guardianContact   String?
-
-  previousEducation String?
-}
-
-model TeacherProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
-
-  fullName          String
-  phoneNumber       String
-  address           String?
-
-  highestDegree     String?
-  certifications    String[]
-  experienceYears   Int?
-  languages         String[]
-  techSkills        String[]
-
-  bio               String?
-  equipment         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // NEW: Tracks if the teacher has accepted the terms and conditions.
-  acceptedTerms     Boolean   @default(false)
-
-  // One-to-one relation for payment details.
-  paymentInfo       TeacherPaymentInfo?
-
-  // A teacher can teach many courses
-  coursesTaught     Course[] @relation("TeacherCourses")
-}
-
-// NEW: Model to store teacher payment information.
-model TeacherPaymentInfo {
-  id                String    @id @default(uuid())
-  bankName          String
-  accountName       String
-  accountNumber     String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // One-to-one relationship with TeacherProfile.
-  teacherId         String    @unique
-  teacherProfile    TeacherProfile @relation(fields: [teacherId], references: [id])
-}
-
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
-}
-
-// ---------------------------------------------------------------- //
-// Programs, Courses & School Structure
-// ---------------------------------------------------------------- //
-
-// This model defines the academic levels (Primary, JSS, Secondary)
-model Level {
-  id        String    @id @default(uuid())
-  name      String    @unique // e.g., "Primary", "JSS", "Secondary"
-  duration  String? // e.g., 6 (years)
-  programs  Program[]
-}
-
-// This model defines the academic tracks (Arabic, Western)
-model Track {
-  id        String    @id @default(uuid())
-  name      String    @unique // e.g., "Arabic", "Western"
-  programs  Program[]
-}
-
-// The main program model now relates to Levels and Tracks
-model Program {
-  id          String        @id @default(uuid())
-  name        String
-  description String?
-  duration    String?
-
-  // New foreign keys referencing the Level and Track models
-  levelId     String
-  level       Level         @relation(fields: [levelId], references: [id])
-
-  trackId     String
-  track       Track         @relation(fields: [trackId], references: [id])
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  // A program is composed of many courses
-  courses     Course[]      @relation("ProgramToCourse")
-
-  subjects    Subject[]     @relation("ProgramToSubject")
-
-  // Students are enrolled in a program through the Enrollment model
-  enrollments Enrollment[]
-  Application Application[]
-}
-
-// Represents a specific course (e.g., "JSS1 Mathematics")
-model Course {
-  id          String          @id @default(uuid())
-  name        String          @unique
-  description String?
-
-  // Link to the subject (e.g., "Mathematics")
-  subjectId   String
-  subject     Subject         @relation(fields: [subjectId], references: [id])
-
-  // Link to the parent program
-  programs    Program[]       @relation("ProgramToCourse")
-
-  // Many-to-many relationship with teachers
-  teachers    TeacherProfile[] @relation("TeacherCourses")
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-// A generic subject (e.g., Mathematics, Physics, Quranic Studies)
-model Subject {
-  id          String      @id @default(uuid())
-  name        String      @unique
-  description String?
-  courses     Course[]
-  programs    Program[]   @relation("ProgramToSubject")
-}
-
-// Represents a student's enrollment in a specific program
-model Enrollment {
-  id          String    @id @default(uuid())
-  studentId   String
-  student     User      @relation(fields: [studentId], references: [id])
-
-  programId   String
-  program     Program   @relation(fields: [programId], references: [id])
-
-  status      String    @default("Active")
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([studentId, programId])
-}
-
-// ---------------------------------------------------------------- //
-// Applications and Vacancies
-// ---------------------------------------------------------------- //
-
-model Application {
-  id          String            @id @default(uuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id])
-
-  type        AppType
-
-  programId   String?
-  program     Program?          @relation(fields: [programId], references: [id])
-
-  vacancyId   String?
-  vacancy     Vacancy?          @relation(fields: [vacancyId], references: [id])
-
-  details     Json?
-
-  status      ApplicationStatus @default(PENDING)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-}
-
-model Vacancy {
-  id           String        @id @default(uuid())
-  title        String
-  description  String
-  requirements String[]
-  location     String
-  type         JobType
-
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  applications Application[]
-}
-
-// ---------------------------------------------------------------- //
-// Exams and Questions
-// ---------------------------------------------------------------- //
-
-model Exam {
-  id            String        @id @default(uuid())
-  title         String
-  createdBy     User          @relation("TeacherExams", fields: [createdById], references: [id])
-  createdById   String
-  questions     Question[]
-  attempts      Attempt[]
-}
-
-model Question {
-  id      String      @id @default(uuid())
-  text    String
-  type    QuestionType
-  exam    Exam        @relation(fields: [examId], references: [id])
-  examId  String
-}
-
-model Attempt {
-  id      String    @id @default(uuid())
-  user    User      @relation(fields: [userId], references: [id])
-  userId  String
-  exam    Exam      @relation(fields: [examId], references: [id])
-  examId  String
-  score   Int?
-}
-
-// ---------------------------------------------------------------- //
-// Enums
-// ---------------------------------------------------------------- //
+// --- Enums ---
 
 enum Role {
-  STUDENT
-  TEACHER
-  ADMIN
+  admin
+  teacher
+  student
 }
 
-enum AppType {
-  STUDENT
-  TEACHER
-}
-
-enum ApplicationStatus {
-  PENDING
-  INTERVIEW_SCHEDULED
-  APPROVED
-  REJECTED
+enum Status {
+  pending // New user account, not yet interviewed or paid
+  approved // User is active and has full access
+  suspended // User access is temporarily blocked
+  rejected // Application was rejected
+  payment_pending_review // ✨ New status: Receipt uploaded, awaiting admin verification
 }
 
 enum QuestionType {
@@ -305,9 +30,286 @@ enum QuestionType {
   TEXT
 }
 
-enum JobType {
-  FULL_TIME
-  PART_TIME
-  CONTRACT
-  INTERNSHIP
+// --- Models ---
+
+// Main User model with updated status and new fields for manual payment
+model User {
+  id                    String              @id @default(cuid())
+  name                  String
+  email                 String              @unique
+  phone                 String?
+  role                  Role                @default(student)
+  status                Status              @default(pending)
+  password              String
+  locale                String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  
+  // New fields for the manual payment flow
+  selectedProgramId     String? // Store the program the student intends to enroll in
+  paymentReceiptUrl     String? // URL of the uploaded payment receipt
+  paymentReceiptAmount  Int?    // Amount specified on the receipt (optional, for verification)
+  
+  // Relations
+  studentApplication    StudentApplication?
+  teacherApplication    TeacherApplication?
+  subscriptions         Subscription[]
+  results               Result[]
+  auditLogs             AuditLog[]
+}
+
+// Student's application for enrollment
+model StudentApplication {
+  id             String      @id @default(cuid())
+  userId         String      @unique
+  desiredTrack   String
+  priorLevel     String?
+  interviewAt    DateTime?
+  status         Status      @default(pending)
+  User           User        @relation(fields: [userId], references: [id])
+}
+
+// Teacher's application for a vacancy
+model TeacherApplication {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  cvUrl       String?
+  interviewAt DateTime?
+  status      Status      @default(pending)
+  User        User        @relation(fields: [userId], references: [id])
+}
+
+// A course of study, distinct from a subject
+model Course {
+  id        String    @id @default(cuid())
+  name      String
+  programs  Program[]
+}
+
+// A specific academic subject
+model Subject {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  track     String    // e.g., "arabic" or "western"
+  programs  Program[]
+}
+
+// Levels of education (e.g., Primary 1, JSS 1)
+model Level {
+  id        String    @id @default(cuid())
+  name      String
+  programs  Program[]
+}
+
+// Academic tracks (e.g., Science, Arts)
+model Track {
+  id        String    @id @default(cuid())
+  name      String
+  programs  Program[]
+}
+
+// Core program model, now with a relation to pricing
+model Program {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  detailedContent String?
+  levelId         String
+  trackId         String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  // Relations
+  level           Level             @relation(fields: [levelId], references: [id])
+  track           Track             @relation(fields: [trackId], references: [id])
+  courses         Course[]
+  subjects        Subject[]
+  priceOptions    ProgramPricing[]
+  subscriptions   Subscription[]
+}
+
+// Model to define a generic pricing plan
+model PricingPlan {
+  id             String            @id @default(cuid())
+  name           String            // e.g., "Monthly" or "Annual"
+  amountMinor    Int               // in kobo/cents
+  currency       String            // e.g., "NGN"
+  intervalMonths Int               // e.g., 1 or 12
+  active         Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  
+  // Relations
+  programs       ProgramPricing[]
+  subscriptions  Subscription[]
+}
+
+// Join table to link a Program to one or more PricingPlans
+model ProgramPricing {
+  id             String       @id @default(cuid())
+  programId      String
+  pricingPlanId  String
+  
+  // Relations
+  program        Program      @relation(fields: [programId], references: [id])
+  pricingPlan    PricingPlan  @relation(fields: [pricingPlanId], references: [id])
+  
+  @@unique([programId, pricingPlanId])
+}
+
+// A student's subscription to a program
+model Subscription {
+  id            String      @id @default(cuid())
+  studentId     String
+  programId     String
+  pricingPlanId String
+  startedAt     DateTime    @default(now())
+  renewAt       DateTime?   // Nullable for manual payments or until renewal is due
+  status        String      // "active", "overdue", "cancelled"
+  provider      String      // "manual" or a payment gateway name
+  providerRef   String?     // Reference ID from the provider or "MANUAL"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  student       User        @relation(fields: [studentId], references: [id])
+  program       Program     @relation(fields: [programId], references: [id])
+  pricingPlan   PricingPlan @relation(fields: [pricingPlanId], references: [id])
+}
+
+// Class that a student or teacher is assigned to
+model Class {
+  id        String          @id @default(cuid())
+  name      String
+  term      Int             // 1, 2, or 3
+  year      Int
+  capacity  Int?
+  socialUrl String?         // Link to the off-site lesson space
+  subjects  ClassSubject[]
+}
+
+// Join table to assign a subject to a class and a teacher
+model ClassSubject {
+  id         String   @id @default(cuid())
+  classId    String
+  subjectId  String
+  teacherId  String?
+  class      Class    @relation(fields: [classId], references: [id])
+  subject    Subject  @relation(fields: [subjectId], references: [id])
+  teacher    User?    @relation(fields: [teacherId], references: [id])
+}
+
+// Student's enrollment in a class and subject
+model StudentClassSubject {
+  id         String  @id @default(cuid())
+  studentId  String
+  classId    String
+  subjectId  String
+  active     Boolean @default(true)
+}
+
+// Advertisements or announcements
+model Advert {
+  id           String    @id @default(cuid())
+  title        String
+  body         String
+  kind         String    // "vacancy" or "announcement"
+  visibleFrom  DateTime?
+  visibleTo    DateTime?
+  active       Boolean   @default(true)
+}
+
+// Exam details
+model Exam {
+  id            String          @id @default(cuid())
+  title         String
+  subjectId     String
+  classId       String
+  creatorId     String
+  startAt       DateTime
+  endAt         DateTime
+  durationMin   Int
+  attempts      Int             @default(1)
+  randomize     Boolean         @default(true)
+  antiCheat     Json?
+  published     Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  questions     Question[]
+  ExamAttempt   ExamAttempt[]
+}
+
+// Individual questions within an exam
+model Question {
+  id         String       @id @default(cuid())
+  examId     String
+  type       QuestionType
+  body       String
+  options    Json?        // for MCQ
+  correct    String?      // for MCQ (key)
+  points     Int
+  order      Int
+  exam       Exam         @relation(fields: [examId], references: [id])
+  answers    Answer[]
+}
+
+// A student's attempt at an exam
+model ExamAttempt {
+  id          String    @id @default(cuid())
+  examId      String
+  studentId   String
+  startedAt   DateTime
+  submittedAt DateTime?
+  scoreAuto   Int       @default(0)
+  scoreManual Int       @default(0)
+  scoreTotal  Int       @default(0)
+  status      String    // "in_progress", "submitted", "graded"
+  meta        Json?
+  exam        Exam      @relation(fields: [examId], references: [id])
+  student     User      @relation(fields: [studentId], references: [id])
+  answers     Answer[]
+}
+
+// A student's answer to a question
+model Answer {
+  id          String      @id @default(cuid())
+  attemptId   String
+  questionId  String
+  text        String?
+  option      String?
+  score       Int         @default(0)
+  attempt     ExamAttempt @relation(fields: [attemptId], references: [id])
+  question    Question    @relation(fields: [questionId], references: [id])
+}
+
+// Student's final result for a term
+model Result {
+  id           String    @id @default(cuid())
+  studentId    String
+  classId      String
+  term         Int
+  year         Int
+  breakdown    Json
+  aggregate    Int
+  percentage   Float
+  grade        String
+  comment      String?
+  publishedAt  DateTime?
+  pdfPath      String?
+  student      User      @relation(fields: [studentId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// Log of user actions for audit purposes
+model AuditLog {
+  id         String    @id @default(cuid())
+  userId     String?
+  action     String
+  entity     String?
+  entityId   String?
+  meta       Json?
+  createdAt  DateTime  @default(now())
+  user       User?     @relation(fields: [userId], references: [id])
 }

@@ -19,7 +19,7 @@ export async function PUT(req: Request) {
     // Validate the request body
     const validatedData = onboardingSchema.parse(body);
 
-      const session = auth();
+      const session = await auth();
     const userId = session?.user?.id;       
 
     // Find the teacher's profile

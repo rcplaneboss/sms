@@ -7,7 +7,6 @@ import { programSchema, ProgramFormValues } from "@/prisma/schema";
 import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/LinkAsButton";
 
-// Extend the interfaces to match the new Prisma schema with relationships
 interface Level {
   id: string;
   name: string;

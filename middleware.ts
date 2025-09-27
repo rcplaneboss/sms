@@ -17,6 +17,7 @@ const roleBasedAccess = {
     "/tracks",
     "/subjects",
     "/courses",
+    '/admin-pricing'
   ],
   teacher: [
     "/teacher-dashboard",
@@ -60,7 +61,7 @@ export default auth((req) => {
 
   // Case 1: Handle Public Paths
   // If the user is authenticated and on a public page, redirect them to their dashboard
-  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/")) {
+  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/") || pathname.startsWith("/programs/")) {
     if (user) {
       const userRole = user.user?.role as keyof typeof roleBasedAccess;
       const redirectTo = roleBasedAccess[userRole.toLowerCase()]?.[0];
