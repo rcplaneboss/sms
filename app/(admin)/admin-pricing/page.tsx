@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,13 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Toaster, toast } from "sonner";
-import { Button } from "@/components/ui/LinkAsButton"; 
-import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi'; 
+import { Button } from "@/components/ui/LinkAsButton"; // Assuming a reusable Button component
+import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi'; // Icons for a modern look
 
-
+// Define a separate Zod schema for the form
 const pricingFormSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
-  amountMinor: z.coerce.number().int().positive({ message: "Amount must be a positive integer." }),
+  amountNaira: z.coerce.number().int().positive({ message: "Amount must be a positive integer." }), // Changed to amountNaira
   currency: z.string().length(3, { message: "Currency must be a 3-letter code (e.g., NGN)." }),
   intervalMonths: z.coerce.number().int().positive({ message: "Interval must be a positive integer (months)." }),
   active: z.boolean().default(true),
@@ -41,7 +40,7 @@ const PricingPage = () => {
     resolver: zodResolver(pricingFormSchema),
     defaultValues: {
       name: "",
-      amountMinor: 0,
+      amountNaira: 0,
       currency: "NGN",
       intervalMonths: 1,
       active: true,
@@ -51,7 +50,7 @@ const PricingPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin-pricing");
+      const res = await fetch("/api/pricing");
       if (!res.ok) throw new Error("Failed to fetch pricing plans");
       const data: PricingPlan[] = await res.json();
       setPlans(data);
@@ -72,7 +71,7 @@ const PricingPage = () => {
     if (plan) {
       form.reset({
         name: plan.name,
-        amountMinor: plan.amountMinor,
+        amountNaira: plan.amountMinor / 100, // Convert from kobo to naira for display
         currency: plan.currency,
         intervalMonths: plan.intervalMonths,
         active: plan.active,
@@ -93,14 +92,21 @@ const PricingPage = () => {
     try {
       const isEditing = !!currentPlan;
       const url = isEditing
-        ? `/api/admin/pricing/${currentPlan?.id}`
-        : "/api/admin/pricing";
+        ? `/api/pricing/${currentPlan?.id}`
+        : "/api/pricing";
       const method = isEditing ? "PUT" : "POST";
+
+      // Convert amountNaira to amountMinor (kobo) before sending
+      const dataToSend = {
+        ...data,
+        amountMinor: data.amountNaira * 100,
+        amountNaira: undefined,
+      };
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(dataToSend),
       });
 
       if (!res.ok) throw new Error("Failed to save plan");
@@ -117,7 +123,7 @@ const PricingPage = () => {
   const handleDelete = async (id: string) => {
     const toastId = toast.loading("Deleting pricing plan...");
     try {
-      const res = await fetch(`/api/admin/pricing/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/pricing/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete plan");
       await fetchData();
       toast.success("Pricing plan deleted successfully!", { id: toastId });
@@ -127,12 +133,13 @@ const PricingPage = () => {
     }
   };
 
-  const formatAmount = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatAmount = (amount: number) => {
+    const nairaAmount = amount / 100;
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2
-    }).format(amount / 100);
+      currency: 'NGN',
+      minimumFractionDigits: 2,
+    }).format(nairaAmount);
   };
 
   if (loading) {
@@ -186,7 +193,7 @@ const PricingPage = () => {
                   plans.map((plan) => (
                     <tr key={plan.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                       <td className="px-6 py-4 whitespace-nowrap">{plan.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{formatAmount(plan.amountMinor, plan.currency)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{formatAmount(plan.amountMinor)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {plan.intervalMonths === 1 ? "Monthly" : `${plan.intervalMonths} Months`}
                       </td>
@@ -236,48 +243,48 @@ const PricingPage = () => {
               {/* Form fields with dark mode styling */}
               <div className="mb-4">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                <input 
-                  id="name" 
-                  {...form.register("name")} 
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                <input
+                  id="name"
+                  {...form.register("name")}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 {form.formState.errors.name && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{form.formState.errors.name.message}</p>}
               </div>
               <div className="mb-4">
-                <label htmlFor="amountMinor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount (in cents/kobo)</label>
-                <input 
-                  id="amountMinor" 
-                  type="number" 
-                  {...form.register("amountMinor", { valueAsNumber: true })} 
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                <label htmlFor="amountNaira" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount (in Naira)</label>
+                <input
+                  id="amountNaira"
+                  type="number"
+                  {...form.register("amountNaira", { valueAsNumber: true })}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-                {form.formState.errors.amountMinor && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{form.formState.errors.amountMinor.message}</p>}
+                {form.formState.errors.amountNaira && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{form.formState.errors.amountNaira.message}</p>}
               </div>
               <div className="mb-4">
                 <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
-                <input 
-                  id="currency" 
-                  {...form.register("currency")} 
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                <input
+                  id="currency"
+                  {...form.register("currency")}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 {form.formState.errors.currency && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{form.formState.errors.currency.message}</p>}
               </div>
               <div className="mb-4">
                 <label htmlFor="intervalMonths" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Interval (in months)</label>
-                <input 
-                  id="intervalMonths" 
-                  type="number" 
-                  {...form.register("intervalMonths", { valueAsNumber: true })} 
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                <input
+                  id="intervalMonths"
+                  type="number"
+                  {...form.register("intervalMonths", { valueAsNumber: true })}
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 {form.formState.errors.intervalMonths && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{form.formState.errors.intervalMonths.message}</p>}
               </div>
               <div className="flex items-center mb-4">
-                <input 
-                  id="active" 
-                  type="checkbox" 
-                  {...form.register("active")} 
-                  className="h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500" 
+                <input
+                  id="active"
+                  type="checkbox"
+                  {...form.register("active")}
+                  className="h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
                 />
                 <label htmlFor="active" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
               </div>
