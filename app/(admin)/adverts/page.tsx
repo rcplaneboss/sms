@@ -151,7 +151,7 @@ const VacanciesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 dark:bg-gray-800">
       <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
@@ -165,8 +165,8 @@ const VacanciesPage = () => {
           </Button>
         </div>
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Title
@@ -182,7 +182,7 @@ const VacanciesPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {vacancies.length === 0 ? (
                 <tr>
                   <td
@@ -195,13 +195,13 @@ const VacanciesPage = () => {
               ) : (
                 vacancies.map((vacancy) => (
                   <tr key={vacancy.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap dark:text-white">
                       {vacancy.title}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap dark:text-white">
                       {vacancy.location}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap dark:text-white">
                       {vacancy.type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -226,8 +226,8 @@ const VacanciesPage = () => {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center dark:bg-opacity-80">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md dark:bg-gray-800">
               <h2 className="text-xl font-semibold mb-4">
                 {currentVacancy ? "Edit Vacancy" : "Add Vacancy"}
               </h2>
@@ -300,7 +300,7 @@ const VacanciesPage = () => {
                   <select
                     id="type"
                     {...form.register("type")}
-                    className="w-full border rounded-md px-3 py-2 mt-1"
+                    className="w-full border rounded-md px-3 py-2 mt-1 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="FULL_TIME">Full Time</option>
                     <option value="PART_TIME">Part Time</option>
@@ -317,7 +317,7 @@ const VacanciesPage = () => {
                   <Button
                     type="button"
                     onClick={handleCloseModal}
-                    className="px-4 py-2 border rounded-md"
+                    className=""
                     variant={"secondary"}
                     size={"sm"}
                     withIcon={false}
@@ -327,7 +327,7 @@ const VacanciesPage = () => {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                    className=""
                     variant={"primary"}
                     size={"sm"}
                     withIcon={false}
