@@ -1,8 +1,14 @@
 import { Button } from "@/components/ui/LinkAsButton";
-import {prisma} from "@/prisma"
+import { prisma } from "@/prisma";
 
-export default async function VacancyDetail({ params }: { params: { id: string } }) {
-  const { id } = params;
+interface VacancyDetailProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function VacancyDetail({
+  params,
+}: VacancyDetailProps) {
+  const { id } = await params;
 
   const job = await prisma.vacancy.findUnique({
     where: {id},

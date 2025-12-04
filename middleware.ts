@@ -6,9 +6,11 @@ const roleBasedAccess = {
   admin: [
     "/admin-dashboard",
     "/approvals",
+    "/admin/payments",
     "/assignments",
     "/exams",
-    "/pricing",
+    "/pricing-list",
+    "/set-pricing",
     "/adverts",
     "/reports",
     "/settings",
@@ -16,8 +18,7 @@ const roleBasedAccess = {
     "/levels",
     "/tracks",
     "/subjects",
-    "/courses",
-    '/admin-pricing'
+    "/courses"
   ],
   teacher: [
     "/teacher-dashboard",
@@ -33,7 +34,7 @@ const roleBasedAccess = {
     "/exams/",
     "/results",
     "/payments",
-    "/programs/apply",
+    "/programs",
   ],
 };
 

@@ -162,6 +162,9 @@ model Program {
   // Students are enrolled in a program through the Enrollment model
   enrollments Enrollment[]
   Application Application[]
+  
+  // Pricing for the program
+  pricing     Pricing?
 }
 
 // Represents a specific course (e.g., "JSS1 Mathematics")
@@ -230,6 +233,11 @@ model Application {
   details     Json?
 
   status      ApplicationStatus @default(PENDING)
+  
+  // Payment tracking for program applications
+  payment     Payment?
+  paymentStatus PaymentStatus   @default(PENDING)
+  
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -279,6 +287,56 @@ model Attempt {
 }
 
 // ---------------------------------------------------------------- //
+// Payments
+// ---------------------------------------------------------------- //
+
+model Payment {
+  id                String          @id @default(uuid())
+  applicationId     String          @unique
+  application       Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  userId            String
+  
+  amount            Decimal         @db.Decimal(10, 2) // Amount paid
+  currency          String          @default("NGN")
+  
+  receiptUrl        String          // URL to uploaded receipt/proof of payment
+  receiptFileName   String?         // Original file name
+  
+  status            PaymentStatus   @default(PENDING)
+  approvedBy        String?         // Admin user ID who approved this
+  approvalNotes     String?         // Admin notes for rejection or verification
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  approvedAt        DateTime?       // When admin approved/rejected
+}
+
+// ---------------------------------------------------------------- //
+// Pricing
+// ---------------------------------------------------------------- //
+
+model Pricing {
+  id                String    @id @default(uuid())
+  programId         String    @unique
+  program           Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  amount            Decimal   @db.Decimal(10, 2) // Price amount
+  currency          String    @default("NGN") // e.g., NGN, USD, GBP
+  billingCycle      String    @default("ANNUAL") // ANNUAL, SEMESTER, MONTHLY, ONE_TIME
+  description       String?
+  
+  // Discounts & Add-ons
+  discountPercent   Float?    // e.g., 10 for 10% discount
+  discountEndDate   DateTime?
+  
+  isActive          Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------- //
 // Enums
 // ---------------------------------------------------------------- //
 
@@ -298,6 +356,13 @@ enum ApplicationStatus {
   INTERVIEW_SCHEDULED
   APPROVED
   REJECTED
+}
+
+enum PaymentStatus {
+  PENDING      // User has not submitted payment yet
+  SUBMITTED    // User submitted payment proof, awaiting admin verification
+  VERIFIED     // Admin approved the payment
+  REJECTED     // Admin rejected the payment proof
 }
 
 enum QuestionType {

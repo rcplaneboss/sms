@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { programSchema, ProgramFormValues } from "@/prisma/schema";
 import { Toaster, toast } from "sonner";
-import { Button } from "@/components/ui/LinkAsButton";
+import { Button } from "@/components/ui/button";
+import { Plus, Edit, Trash2, ChevronLeft } from "lucide-react";
 
 // --- Interface Definitions ---
 
@@ -206,94 +207,92 @@ const ProgramsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800">
-        <p>Loading...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-950">
+        <p className="text-gray-700 dark:text-slate-300">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8 relative dark:bg-gray-800 max-md:w-full">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 relative dark:bg-slate-950 max-md:w-full">
       <Toaster />
       <div className="max-w-6xl mx-auto">
         {/* Header and Add Button */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Programs</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">Programs</h1>
           <Button
             onClick={() => handleOpenModal()}
             variant={"primary"}
             size={"sm"}
           >
-            Add Program
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">Add Program</span>
+            <span className="hidden sm:inline">Add Program</span>
           </Button>
         </div>
 
         {/* Programs Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden dark:bg-gray-700">
-          <table className="min-w-full divide-y divide-gray-200 overflow-x-scroll dark:divide-gray-600">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+        <div className="bg-white rounded-lg shadow overflow-hidden dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 overflow-x-scroll">
+            <thead className="bg-gray-50 dark:bg-slate-900/40">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Level
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Track
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Courses
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Subjects
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-700 dark:divide-gray-600">
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-slate-900 dark:divide-slate-700">
               {programs?.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-6 py-4 text-center text-gray-500"
+                    className="px-6 py-4 text-center text-gray-500 dark:text-slate-400"
                   >
                     No programs found.
                   </td>
                 </tr>
               ) : (
                 programs.map((program) => (
-                  <tr key={program.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={program.id} className="hover:bg-gray-50 dark:hover:bg-slate-900/30">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-slate-100">
                       {program.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-slate-400">
                       {getLevelName(program.levelId)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-slate-400">
                       {getTrackName(program.trackId)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-slate-300">
                       {program.courses?.length}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-slate-300">
                       {program.subjects?.length}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => handleOpenModal(program)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(program.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleOpenModal(program)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(program.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
