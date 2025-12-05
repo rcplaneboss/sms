@@ -67,7 +67,7 @@ export default function ExamTakerPage({
           setExamData(data);
         } else {
           toast.error("Exam not found");
-          redirect("/exams");
+          redirect("/my-exams");
         }
       } catch (error) {
         console.error("Error fetching exam:", error);
@@ -182,7 +182,7 @@ export default function ExamTakerPage({
                 Your exam has been submitted successfully. Your score will be calculated by the instructor.
               </p>
             </div>
-            <Button onClick={() => redirect("/exams")} className="w-full">
+            <Button onClick={() => redirect("/my-exams")} className="w-full">
               Back to Exams
             </Button>
           </CardContent>
@@ -229,7 +229,7 @@ export default function ExamTakerPage({
 
               {/* Answer Input based on question type */}
               <div>
-                {currentQuestion.type === "MULTIPLE_CHOICE" && (
+                {currentQuestion.type === "MCQ" && (
                   <div className="space-y-3">
                     {["Option A", "Option B", "Option C", "Option D"].map((option) => (
                       <label

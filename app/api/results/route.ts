@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -15,8 +15,7 @@ export async function GET(req: NextRequest) {
       include: {
         exam: { select: { id: true, title: true } },
         user: { select: { id: true, name: true } }
-      },
-      orderBy: { createdAt: 'desc' }
+      }
     });
 
     return NextResponse.json(results);

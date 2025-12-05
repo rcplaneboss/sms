@@ -275,6 +275,15 @@ model Question {
   type    QuestionType
   exam    Exam        @relation(fields: [examId], references: [id])
   examId  String
+  options QuestionOption[]
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid())
+  text       String
+  isCorrect  Boolean  @default(false)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
 }
 
 model Attempt {
@@ -367,7 +376,9 @@ enum PaymentStatus {
 
 enum QuestionType {
   MCQ
-  TEXT
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
 }
 
 enum JobType {

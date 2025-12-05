@@ -68,7 +68,7 @@ export default function StudentExamsPage() {
         const data = await response.json();
         toast.success("Exam started");
         // Redirect to exam taker page
-        redirect(`/exams/${examId}`);
+        redirect(`/my-exams/${examId}`);
       } else {
         const error = await response.json();
         toast.error(error.error || "Failed to start exam");

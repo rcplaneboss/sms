@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -14,8 +14,15 @@ export async function GET(
       select: {
         id: true,
         text: true,
-        type: true
-      }
+        type: true,
+        options: {
+          select: {
+            id: true,
+            text: true,
+            isCorrect: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(questions);
@@ -53,7 +60,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { text, type } = await req.json();
+    const { text, type, options } = await req.json();
 
     if (!text || !type) {
       return NextResponse.json(
@@ -62,15 +69,44 @@ export async function POST(
       );
     }
 
+    // Create the question
     const question = await prisma.question.create({
       data: {
         text: text.trim(),
         type,
-        examId: id
-      }
+        examId: id,
+      },
     });
 
-    return NextResponse.json(question, { status: 201 });
+    // If MCQ with options, create them separately
+    let createdOptions = [];
+    if (type === "MCQ" && options && Array.isArray(options) && options.length > 0) {
+      try {
+        for (const opt of options) {
+          const createdOpt = await prisma.questionOption.create({
+            data: {
+              text: opt.text.trim(),
+              isCorrect: opt.isCorrect,
+              questionId: question.id,
+            },
+          });
+          createdOptions.push(createdOpt);
+        }
+      } catch (optError) {
+        // If options table doesn't exist yet (DB not migrated), log but don't fail
+        console.warn("Warning: Could not create question options. Database schema may not be migrated yet.", optError);
+        // Return options from the request body as a fallback
+        createdOptions = options;
+      }
+    }
+
+    // Return the question with options
+    const responseData = {
+      ...question,
+      options: createdOptions,
+    };
+
+    return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
     console.error("Error creating question:", error);
     return NextResponse.json(

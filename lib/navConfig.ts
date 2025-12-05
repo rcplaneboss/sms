@@ -13,16 +13,16 @@ export const publicNav = [
 export const studentNav = [
   { href: "/student-dashboard", label: "Dashboard" },
   { href: "/programs", label: "Programs" },
-  { href: "/results", label: "Results" },
+  { href: "/my-exams", label: "Exams" },
+  { href: "/my-results", label: "Results" },
   { href: "/payments", label: "Payments" },
 ];
 
 export const teacherNav = [
   { href: "/teacher-dashboard", label: "Dashboard" },
   { href: "/classes", label: "Classes" },
-  { href: "/exams", label: "Exams" },
-  { href: "/grading", label: "Grading" },
   { href: "/assigned-courses", label: "My Assignments" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export const adminNav = [

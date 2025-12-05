@@ -35,6 +35,7 @@ const roleBasedAccess = {
     "/results",
     "/payments",
     "/programs",
+    '/my-exams'
   ],
 };
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/prisma";
+import prisma from "@/lib/prisma";
 
 // GET student applications
 export async function GET(req: NextRequest) {

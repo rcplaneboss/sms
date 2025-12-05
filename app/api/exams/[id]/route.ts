@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -21,7 +21,8 @@ export async function GET(
           select: {
             id: true,
             text: true,
-            type: true
+            type: true,
+            options: { select: { id: true, text: true, isCorrect: true } }
           }
         },
         createdBy: { select: { name: true, id: true } },

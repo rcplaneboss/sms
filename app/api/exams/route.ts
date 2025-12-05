@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const exams = await prisma.exam.findMany({
       include: {
         questions: {
-          select: { id: true }
+          select: { id: true, text: true, type: true }
         },
         attempts: {
           where: { userId: session.user.id },
@@ -25,8 +25,7 @@ export async function GET(req: NextRequest) {
         createdBy: {
           select: { name: true }
         }
-      },
-      orderBy: { createdAt: 'desc' }
+      }
     });
 
     return NextResponse.json(exams);

@@ -21,7 +21,7 @@ interface Exam {
   id: string;
   title: string;
   createdById: string;
-  questions: { id: string }[];
+  questions: { id: string; text: string; type: string; options?: { id: string; text: string; isCorrect: boolean }[] }[];
   createdBy: { name: string };
   attempts: { id: string; score: number | null }[];
   createdAt: string;
@@ -43,7 +43,14 @@ export default function AdminExamsPage() {
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [newQuestionText, setNewQuestionText] = useState("");
-  const [newQuestionType, setNewQuestionType] = useState("MULTIPLE_CHOICE");
+  const [newQuestionType, setNewQuestionType] = useState("MCQ");
+  const [newOptions, setNewOptions] = useState<{ text: string; isCorrect: boolean }[]>([
+    { text: "", isCorrect: false },
+    { text: "", isCorrect: false },
+  ]);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editQuestionText, setEditQuestionText] = useState("");
+  const [editQuestionOptions, setEditQuestionOptions] = useState<{ id: string; text: string; isCorrect: boolean }[]>([]);
 
   useEffect(() => {
     if (session?.user?.role === "ADMIN") {
@@ -149,6 +156,19 @@ export default function AdminExamsPage() {
       return;
     }
 
+    if (newQuestionType === "MCQ") {
+      const hasEmptyOption = newOptions.some(opt => !opt.text.trim());
+      if (hasEmptyOption) {
+        toast.error("All MCQ options must have text");
+        return;
+      }
+      const hasCorrectAnswer = newOptions.some(opt => opt.isCorrect);
+      if (!hasCorrectAnswer) {
+        toast.error("At least one MCQ option must be marked as correct");
+        return;
+      }
+    }
+
     try {
       const response = await fetch(`/api/exams/${examId}/questions`, {
         method: "POST",
@@ -156,12 +176,18 @@ export default function AdminExamsPage() {
         body: JSON.stringify({
           text: newQuestionText,
           type: newQuestionType,
+          options: newQuestionType === "MCQ" ? newOptions : undefined,
         }),
       });
 
       if (response.ok) {
         fetchExams();
         setNewQuestionText("");
+        setNewQuestionType("MCQ");
+        setNewOptions([
+          { text: "", isCorrect: false },
+          { text: "", isCorrect: false },
+        ]);
         toast.success("Question added");
       } else {
         toast.error("Failed to add question");
@@ -169,6 +195,55 @@ export default function AdminExamsPage() {
     } catch (error) {
       console.error("Error adding question:", error);
       toast.error("Error adding question");
+    }
+  };
+
+  const handleEditQuestion = async (examId: string, questionId: string) => {
+    if (!editQuestionText.trim()) {
+      toast.error("Question text is required");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/exams/${examId}/questions/${questionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: editQuestionText,
+          options: editQuestionOptions,
+        }),
+      });
+
+      if (response.ok) {
+        fetchExams();
+        setEditingQuestionId(null);
+        toast.success("Question updated");
+      } else {
+        toast.error("Failed to update question");
+      }
+    } catch (error) {
+      console.error("Error updating question:", error);
+      toast.error("Error updating question");
+    }
+  };
+
+  const handleDeleteQuestion = async (examId: string, questionId: string) => {
+    if (!confirm("Are you sure you want to delete this question?")) return;
+
+    try {
+      const response = await fetch(`/api/exams/${examId}/questions/${questionId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        fetchExams();
+        toast.success("Question deleted");
+      } else {
+        toast.error("Failed to delete question");
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      toast.error("Error deleting question");
     }
   };
 
@@ -347,18 +422,81 @@ export default function AdminExamsPage() {
                           />
                           <select
                             value={newQuestionType}
-                            onChange={(e) =>
-                              setNewQuestionType(e.target.value)
-                            }
+                            onChange={(e) => {
+                              setNewQuestionType(e.target.value);
+                              // Reset options when type changes
+                              if (e.target.value !== "MCQ") {
+                                setNewOptions([
+                                  { text: "", isCorrect: false },
+                                  { text: "", isCorrect: false },
+                                ]);
+                              }
+                            }}
                             className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           >
-                            <option value="MULTIPLE_CHOICE">
+                            <option value="MCQ">
                               Multiple Choice
                             </option>
                             <option value="TRUE_FALSE">True/False</option>
                             <option value="SHORT_ANSWER">Short Answer</option>
                             <option value="ESSAY">Essay</option>
                           </select>
+
+                          {/* MCQ Options Section */}
+                          {newQuestionType === "MCQ" && (
+                            <div className="space-y-3 bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                              <h5 className="font-medium text-sm text-slate-900 dark:text-white">
+                                Options
+                              </h5>
+                              {newOptions.map((option, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex gap-2 items-center"
+                                >
+                                  <Input
+                                    placeholder={`Option ${idx + 1}`}
+                                    value={option.text}
+                                    onChange={(e) => {
+                                      const updated = [...newOptions];
+                                      updated[idx].text = e.target.value;
+                                      setNewOptions(updated);
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                                    <input
+                                      type="checkbox"
+                                      checked={option.isCorrect}
+                                      onChange={(e) => {
+                                        const updated = [...newOptions];
+                                        updated[idx].isCorrect = e.target.checked;
+                                        setNewOptions(updated);
+                                      }}
+                                      className="w-4 h-4 rounded"
+                                    />
+                                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                                      Correct
+                                    </span>
+                                  </label>
+                                </div>
+                              ))}
+                              <Button
+                                onClick={() =>
+                                  setNewOptions([
+                                    ...newOptions,
+                                    { text: "", isCorrect: false },
+                                  ])
+                                }
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Option
+                              </Button>
+                            </div>
+                          )}
+
                           <Button
                             onClick={() => handleAddQuestion(exam.id)}
                             className="w-full"
@@ -376,15 +514,164 @@ export default function AdminExamsPage() {
                             <p>No questions yet. Add your first question.</p>
                           </div>
                         ) : (
-                          <div className="space-y-2 max-h-80 overflow-y-auto">
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
                             {exam.questions.map((question, idx) => (
                               <div
                                 key={question.id}
-                                className="p-3 bg-slate-100 dark:bg-slate-800 rounded"
+                                className="p-4 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700"
                               >
-                                <p className="text-sm text-slate-900 dark:text-white">
-                                  <strong>Q{idx + 1}:</strong> {/* Question text would be here */}
-                                </p>
+                                {editingQuestionId === question.id ? (
+                                  // Edit Mode
+                                  <div className="space-y-3">
+                                    <Input
+                                      value={editQuestionText}
+                                      onChange={(e) =>
+                                        setEditQuestionText(e.target.value)
+                                      }
+                                      placeholder="Question text"
+                                    />
+
+                                    {question.type === "MCQ" && editQuestionOptions.length > 0 && (
+                                      <div className="space-y-2 bg-white dark:bg-slate-700 p-3 rounded">
+                                        <h6 className="text-sm font-medium text-slate-900 dark:text-white">
+                                          Options
+                                        </h6>
+                                        {editQuestionOptions.map((opt, optIdx) => (
+                                          <div key={opt.id} className="flex gap-2 items-center">
+                                            <input
+                                              type="text"
+                                              value={opt.text}
+                                              onChange={(e) => {
+                                                const updated = [...editQuestionOptions];
+                                                updated[optIdx].text = e.target.value;
+                                                setEditQuestionOptions(updated);
+                                              }}
+                                              placeholder={`Option ${optIdx + 1}`}
+                                              className="flex-1 px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                                            />
+                                            <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                                              <input
+                                                type="checkbox"
+                                                checked={opt.isCorrect}
+                                                onChange={(e) => {
+                                                  const updated = [...editQuestionOptions];
+                                                  updated[optIdx].isCorrect =
+                                                    e.target.checked;
+                                                  setEditQuestionOptions(updated);
+                                                }}
+                                                className="w-4 h-4 rounded"
+                                              />
+                                              <span className="text-xs text-slate-600 dark:text-slate-400">
+                                                Correct
+                                              </span>
+                                            </label>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const updated = editQuestionOptions.filter((_, i) => i !== optIdx);
+                                                setEditQuestionOptions(updated);
+                                              }}
+                                              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        ))}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditQuestionOptions([
+                                              ...editQuestionOptions,
+                                              { id: `new-${Date.now()}`, text: "", isCorrect: false }
+                                            ]);
+                                          }}
+                                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                          Add Option
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                      <Button
+                                        onClick={() =>
+                                          handleEditQuestion(exam.id, question.id)
+                                        }
+                                        variant="default"
+                                        size="sm"
+                                      >
+                                        Save
+                                      </Button>
+                                      <Button
+                                        onClick={() => setEditingQuestionId(null)}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // View Mode
+                                  <div>
+                                    <div className="flex justify-between items-start mb-2">
+                                      <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                        <strong>Q{idx + 1}:</strong> {question.text}
+                                      </p>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={() => {
+                                            setEditingQuestionId(question.id);
+                                            setEditQuestionText(question.text);
+                                            setEditQuestionOptions(
+                                              question.options || []
+                                            );
+                                          }}
+                                          variant="outline"
+                                          size="sm"
+                                          className="gap-1"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          onClick={() =>
+                                            handleDeleteQuestion(
+                                              exam.id,
+                                              question.id
+                                            )
+                                          }
+                                          variant="outline"
+                                          size="sm"
+                                          className="gap-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+
+                                    {question.type === "MCQ" &&
+                                      question.options &&
+                                      question.options.length > 0 && (
+                                        <ul className="mt-2 list-disc list-inside text-sm text-slate-700 dark:text-slate-300 ml-2">
+                                          {question.options.map((opt) => (
+                                            <li
+                                              key={opt.id}
+                                              className="flex items-center gap-2"
+                                            >
+                                              <span>{opt.text}</span>
+                                              {opt.isCorrect && (
+                                                <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                                                  (correct)
+                                                </span>
+                                              )}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
