@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const exams = await prisma.exam.findMany({
       include: {
         questions: {
-          select: { id: true, text: true, type: true }
+          select: { id: true, text: true, type: true, options: true }
         },
         attempts: {
           where: { userId: session.user.id },

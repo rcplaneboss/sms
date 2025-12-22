@@ -64,6 +64,7 @@ export default function AdminExamsPage() {
       if (response.ok) {
         const data = await response.json();
         setExams(data);
+        console.log("Fetched exams:", data);
       }
     } catch (error) {
       console.error("Error fetching exams:", error);
@@ -615,7 +616,7 @@ export default function AdminExamsPage() {
                                 ) : (
                                   // View Mode
                                   <div>
-                                    <div className="flex justify-between items-start mb-2">
+                                    <div className="flex justify-between items-start mb-2 flex-col sm:flex-row sm:items-center gap-3" >
                                       <p className="text-sm font-medium text-slate-900 dark:text-white">
                                         <strong>Q{idx + 1}:</strong> {question.text}
                                       </p>
