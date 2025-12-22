@@ -72,6 +72,9 @@ export default auth((req) => {
       }
     }
     return NextResponse.next();
+
+
+    
   }
 
   // Case 2: Handle Unauthenticated Access
