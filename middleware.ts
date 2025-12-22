@@ -63,16 +63,16 @@ export default auth((req) => {
 
   // Case 1: Handle Public Paths
   // If the user is authenticated and on a public page, redirect them to their dashboard
-  // if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/") || pathname.startsWith("/programs/")) {
-  //   if (user) {
-  //     const userRole = user.user?.role as keyof typeof roleBasedAccess;
-  //     const redirectTo = roleBasedAccess[userRole.toLowerCase()]?.[0];
-  //     if (redirectTo) {
-  //       return NextResponse.redirect(new URL(redirectTo, nextUrl));
-  //     }
-  //   }
-  //   return NextResponse.next();
-  // }
+  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/") || pathname.startsWith("/programs/")) {
+    if (user) {
+      const userRole = user.user?.role as keyof typeof roleBasedAccess;
+      const redirectTo = roleBasedAccess[userRole.toLowerCase()]?.[0];
+      if (redirectTo) {
+        return NextResponse.redirect(new URL(redirectTo, nextUrl));
+      }
+    }
+    return NextResponse.next();
+  }
 
   // Case 2: Handle Unauthenticated Access
   // If there's no session and the path is not public, redirect to the login page

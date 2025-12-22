@@ -164,17 +164,18 @@ const Header = () => {
                     </Button>
                   )}
 
-                  {role !== "admin" && (
+                  {role !== "admin" && role !== "student" && role !== "teacher" && (
                     <Button href="/about" variant="primary" className="mt-4">
                       Contact Us
                     </Button>
                   )}
+
                   {session?.user?.id && (
                     <Button
                       variant="primary"
-                      size="md"
+                      size="sm"
                       onClick={() => signOut({ callbackUrl: "/" })}
-                      className="max-md:hidden cursor-pointer"
+                      className="max-md:flex cursor-pointer hidden"
                     >
                       Log out
                     </Button>
