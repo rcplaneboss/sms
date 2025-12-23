@@ -3,44 +3,44 @@ import { auth } from "@/auth";
 import { prisma } from "@/prisma";
 import { AdminPaymentList } from "@/components/AdminPaymentList";
 
+// ... your imports
+
 export default async function AdminPaymentsPage() {
   const session = await auth();
 
-  // Check if user is admin
   if (session?.user?.role !== "ADMIN") {
     redirect("/access-denied");
   }
 
-  // Fetch all payments for initial load
   let payments = [];
   try {
-    payments = await prisma.payment.findMany({
-      where: {
-        status: "SUBMITTED",
-      },
+    const rawPayments = await prisma.payment.findMany({
+      where: { status: "SUBMITTED" },
       include: {
         application: {
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            program: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            user: { select: { id: true, name: true, email: true } },
+            program: { select: { id: true, name: true } },
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
+    console.log("Raw Payments:", rawPayments);
+    
+    // Convert Decimal and Date objects to plain types
+    payments = rawPayments.map((payment) => ({
+      ...payment,
+      amount: payment.amount.toNumber(), 
+      createdAt: payment.createdAt.toISOString(),
+      updatedAt: payment.updatedAt.toISOString(),
+      application: {
+        ...payment.application,
+        createdAt: payment.application.createdAt.toISOString(),
+        updatedAt: payment.application.updatedAt.toISOString(),
+      }
+    }));
+
   } catch (error) {
     console.error("Error fetching payments:", error);
   }
@@ -57,7 +57,7 @@ export default async function AdminPaymentsPage() {
           </p>
         </div>
 
-        <AdminPaymentList initialPayments={payments as any} />
+        <AdminPaymentList initialPayments={payments} />
       </div>
     </div>
   );

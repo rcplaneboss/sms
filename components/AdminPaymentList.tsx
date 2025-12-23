@@ -41,6 +41,7 @@ interface AdminPaymentListProps {
 export function AdminPaymentList({
   initialPayments = [],
 }: AdminPaymentListProps) {
+  console.log("Initial Payments:", initialPayments);
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
   const [loading, setLoading] = useState(!initialPayments.length);
   const [filterStatus, setFilterStatus] = useState("SUBMITTED");
@@ -136,7 +137,7 @@ export function AdminPaymentList({
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency,
     }).format(amount);
@@ -253,7 +254,7 @@ export function AdminPaymentList({
                     </div>
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                    {payment.application.program.name}
+                    {payment?.application?.program?.name}
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                     {formatCurrency(Number(payment.amount), payment.currency)}
