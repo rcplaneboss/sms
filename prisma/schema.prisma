@@ -128,6 +128,7 @@ model Level {
   name      String    @unique // e.g., "Primary", "JSS", "Secondary"
   duration  String? // e.g., 6 (years)
   programs  Program[]
+  exam  Exam[]
 }
 
 // This model defines the academic tracks (Arabic, Western)
@@ -135,6 +136,7 @@ model Track {
   id        String    @id @default(uuid())
   name      String    @unique // e.g., "Arabic", "Western"
   programs  Program[]
+  exams  Exam[]
 }
 
 // The main program model now relates to Levels and Tracks
@@ -158,6 +160,7 @@ model Program {
   courses     Course[]      @relation("ProgramToCourse")
 
   subjects    Subject[]     @relation("ProgramToSubject")
+  exams    Exam[]     
 
   // Students are enrolled in a program through the Enrollment model
   enrollments Enrollment[]
@@ -179,6 +182,7 @@ model Course {
 
   // Link to the parent program
   programs    Program[]       @relation("ProgramToCourse")
+  exam    Exam[]     
 
   // Many-to-many relationship with teachers
   teachers    TeacherProfile[] @relation("TeacherCourses")
@@ -265,8 +269,18 @@ model Exam {
   title         String
   createdBy     User          @relation("TeacherExams", fields: [createdById], references: [id])
   createdById   String
+  term          TermType      @default(FIRST)
   questions     Question[]
+  course     Course[]
   attempts      Attempt[]
+  
+  track     Track         @relation(fields: [trackId], references: [id])
+  level     Level         @relation(fields: [levelId], references: [id])
+  program     Program         @relation(fields: [programId], references: [id])
+
+  programId   String     @unique
+  trackId   String        @unique
+  levelId   String        @unique
 }
 
 model Question {
@@ -379,6 +393,13 @@ enum QuestionType {
   TRUE_FALSE
   SHORT_ANSWER
   ESSAY
+}
+
+enum TermType {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
 }
 
 enum JobType {

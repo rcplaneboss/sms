@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
           where: { userId: session.user.id },
           select: { id: true, score: true }
         },
+        program: { select: { name: true, } },
+        level: { select: { name: true } },  
+        track: { select: { name: true } },
         createdBy: {
           select: { name: true }
         }
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { title } = await req.json();
+    const { title, programId, levelId, trackId } = await req.json();
 
     if (!title || title.trim() === '') {
       return NextResponse.json(
@@ -59,9 +62,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!programId || !levelId || !trackId) {
+      return NextResponse.json(
+        { error: "Program, Level, and Track are required" },
+        { status: 400 }
+      );
+    }
+
     const exam = await prisma.exam.create({
       data: {
         title: title.trim(),
+        programId: programId,
+        levelId: levelId,
+        trackId: trackId,
         createdById: session.user.id
       },
       include: {

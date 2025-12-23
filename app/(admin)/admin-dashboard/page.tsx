@@ -321,7 +321,7 @@ export default function AdminDashboard() {
                             {payment.application.user.name}
                           </h3>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                            {payment.application.program.name}
+                            {/* {payment.application.program.name} */}
                           </p>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">
                             {formatCurrency(Number(payment.amount), payment.currency)}

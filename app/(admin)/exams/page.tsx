@@ -17,11 +17,44 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+
+// --- Interface Definitions ---
+
+interface Level {
+  id: string;
+  name: string;
+}
+
+interface Track {
+  id: string;
+  name: string;
+}
+
+interface Course {
+  id: string;
+  name: string;
+}
+
+
+interface Program {
+  id: string;
+  name: string;
+  description?: string;
+  levelId: string;
+  trackId: string;
+  courses: Course[];
+  subjects: Subject[];
+}
+
 interface Exam {
   id: string;
   title: string;
   createdById: string;
   questions: { id: string; text: string; type: string; options?: { id: string; text: string; isCorrect: boolean }[] }[];
+  track: Track | null;
+  level: Level | null;
+  course: Course | null;
+  program: Program | null;
   createdBy: { name: string };
   attempts: { id: string; score: number | null }[];
   createdAt: string;
@@ -35,10 +68,17 @@ export default function AdminExamsPage() {
     },
   });
 
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newExamTitle, setNewExamTitle] = useState("");
+  const [newExamProgram, setNewExamProgram] = useState("");
+  const [newExamTrack, setNewExamTrack] = useState("");
+  const [newExamLevel, setNewExamLevel] = useState("");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -57,6 +97,48 @@ export default function AdminExamsPage() {
       fetchExams();
     }
   }, [session?.user?.role]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [programsRes, levelsRes, tracksRes, coursesRes] =
+        await Promise.all([
+          fetch("/api/programs"),
+          fetch("/api/levels"),
+          fetch("/api/tracks"),
+          fetch("/api/courses"),
+        ]);
+
+      if (
+        !programsRes.ok ||
+        !levelsRes.ok ||
+        !tracksRes.ok ||
+        !coursesRes.ok
+      ) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const programsData: Program[] = await programsRes.json();
+      const levelsData: Level[] = await levelsRes.json();
+      const tracksData: Track[] = await tracksRes.json();
+      const coursesData: Course[] = await coursesRes.json();
+
+      setPrograms(programsData);
+      setLevels(levelsData);
+      setTracks(tracksData);
+      setCourses(coursesData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
 
   const fetchExams = async () => {
     try {
@@ -80,12 +162,27 @@ export default function AdminExamsPage() {
       return;
     }
 
+    if (!newExamProgram) {
+      toast.error("Program is required");
+      return;
+    }
+
+    if (!newExamLevel) {
+      toast.error("Level is required");
+      return;
+    }
+
+    if (!newExamTrack) {
+      toast.error("Track is required");
+      return;
+    }
+
     setCreating(true);
     try {
       const response = await fetch("/api/exams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newExamTitle }),
+        body: JSON.stringify({ title: newExamTitle, programId: newExamProgram, levelId: newExamLevel, trackId: newExamTrack }),
       });
 
       if (response.ok) {
@@ -278,12 +375,56 @@ export default function AdminExamsPage() {
                 Create New Exam
               </h3>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Exam title (e.g., Mathematics Final Exam)"
-                  value={newExamTitle}
-                  onChange={(e) => setNewExamTitle(e.target.value)}
-                  disabled={creating}
-                />
+                <div className="w-full">
+                  <Input
+                    placeholder="Exam title (e.g., Mathematics Final Exam)"
+                    value={newExamTitle}
+                    onChange={(e) => setNewExamTitle(e.target.value)}
+                    disabled={creating}
+                  />
+                  <div className="flex max-md:flex-col mt-2 gap-4 w-full">
+                    <div className="">
+                      <select name="program" id="program" className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" defaultValue=""
+                        onChange={(e) => setNewExamProgram(e.target.value)}
+                      >
+                        <option value="" disabled>Select a program</option>
+                        {programs.map((program) => (
+                          <option key={program.id} value={program.id}>
+                            {program.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="">
+                      <select name="level" id="level" className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" defaultValue='' onChange={(e)=>{
+                        setNewExamLevel(e.target.value)
+                      }}>
+                          <option value="" disabled>Select a level</option>
+                        {levels.map((level) => (
+                          <option key={level.id} value={level.id}>
+                            {level.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="">
+                     
+                      <select name="track" id="track" className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" defaultValue='' onChange={(e)=>{
+                        setNewExamTrack(e.target.value)
+                      }}>
+                        <option value="" disabled>Select a track</option>
+                        {tracks.map((track) => (
+                          <option key={track.id} value={track.id}>
+                            {track.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleCreateExam}
                   disabled={creating}
@@ -339,8 +480,13 @@ export default function AdminExamsPage() {
                           </h3>
                         )}
                         <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400 mt-2">
+                          <span>{exam?.program?.name}</span> - 
+                          <span>{exam?.level?.name}</span> -
+                          <span>{exam?.track?.name}</span>
+                        </div>
+                        <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400 mt-2">
                           <span>{exam.questions.length} questions</span>
-                          <span>{exam.attempts.length} attempts</span>
+                          {/* <span>{exam.attempts.length} attempts</span> */}
                           <span>By {exam.createdBy.name}</span>
                         </div>
                       </div>
@@ -617,8 +763,9 @@ export default function AdminExamsPage() {
                                   // View Mode
                                   <div>
                                     <div className="flex justify-between items-start mb-2 flex-col sm:flex-row sm:items-center gap-3" >
-                                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                        <strong>Q{idx + 1}:</strong> {question.text}
+                                      <p className="flex max-md:flex-col justify-between text-sm font-medium text-slate-900 dark:text-white w-full">
+                                        <div className=""><strong>Q{idx + 1}:</strong> {question.text}</div>
+                                        <div className="">QuestionType: {question.type}</div>
                                       </p>
                                       <div className="flex gap-2">
                                         <Button
