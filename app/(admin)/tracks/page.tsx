@@ -110,18 +110,18 @@ const TracksPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <p>Loading...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <p className="dark:text-white">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8">
       <Toaster />
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Academic Tracks</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold dark:text-white">Academic Tracks</h1>
           <Button
             onClick={() => handleOpenModal()}
             variant="primary"
@@ -131,25 +131,55 @@ const TracksPage = () => {
           </Button>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        {/* Mobile Card View */}
+        <div className="block md:hidden space-y-4">
+          {tracks.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+              <p className="text-gray-500 dark:text-gray-400">No tracks found.</p>
+            </div>
+          ) : (
+            tracks.map((track) => (
+              <div key={track.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <h3 className="font-semibold text-lg dark:text-white mb-3">{track.name}</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleOpenModal(track)}
+                    className="flex-1 px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(track.id)}
+                    className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Name
                 </th>
 
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {tracks.length === 0 ? (
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-6 py-4 text-center text-gray-500"
+                    className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
                   >
                     No tracks found.
                   </td>
@@ -157,20 +187,20 @@ const TracksPage = () => {
               ) : (
                 tracks.map((track) => (
                   <tr key={track.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap dark:text-white">
                       {track.name}
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
                         onClick={() => handleOpenModal(track)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-2"
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(track.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Delete
                       </button>
@@ -183,35 +213,36 @@ const TracksPage = () => {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
-              <h2 className="text-xl font-semibold mb-4">
+          <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 dark:bg-opacity-80 flex justify-center items-center p-4">
+            <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4 dark:text-white">
                 {currentTrack ? "Edit Track" : "Add Track"}
               </h2>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="mb-4">
-                  <label htmlFor="name" className="block text-sm font-medium">
+                  <label htmlFor="name" className="block text-sm font-medium dark:text-gray-200">
                     Track Name
                   </label>
                   <input
                     id="name"
                     {...form.register("name")}
-                    className="w-full border rounded-md px-3 py-2 mt-1"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mt-1 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
                   />
                   {form.formState.errors.name && (
-                    <p className="text-red-500 text-sm mt-1">
+                    <p className="text-red-500 dark:text-red-400 text-sm mt-1">
                       {form.formState.errors.name.message}
                     </p>
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
                   <Button
                     type="button"
                     onClick={handleCloseModal}
                     variant="secondary"
                     size="sm"
                     icon={false}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
@@ -219,6 +250,7 @@ const TracksPage = () => {
                     type="submit"
                     disabled={form.formState.isSubmitting}
                     variant="primary"
+                    className="w-full sm:w-auto"
                   >
                     {form.formState.isSubmitting ? "Saving..." : "Save"}
                   </Button>

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { title, programId, levelId, trackId } = await req.json();
+    const { title, programId, levelId, trackId, subjectId } = await req.json();
 
     if (!title || title.trim() === '') {
       return NextResponse.json(
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!programId || !levelId || !trackId) {
+    if (!programId || !levelId || !trackId || !subjectId) {
       return NextResponse.json(
         { error: "Program, Level, and Track are required" },
         { status: 400 }
@@ -75,11 +75,16 @@ export async function POST(req: NextRequest) {
         programId: programId,
         levelId: levelId,
         trackId: trackId,
+        subjectId: subjectId,
         createdById: session.user.id
       },
       include: {
         questions: true,
-        createdBy: { select: { name: true } }
+        createdBy: { select: { name: true } },
+        program: { select: { id: true, name: true } },
+        level: { select: { id: true, name: true } },
+        track: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true } }
       }
     });
 

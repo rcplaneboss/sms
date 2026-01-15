@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,88 +12,88 @@ datasource db {
 // ---------------------------------------------------------------- //
 
 model User {
-  id              String          @id @default(uuid())
-  name            String?
-  email           String          @unique
-  emailVerified   DateTime?
-  image           String?
-  role            Role            @default(STUDENT)
-  password        String?
-  accounts        Account[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(STUDENT)
+  password      String?
+  accounts      Account[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  applications    Application[]
-  exams           Exam[]          @relation("TeacherExams")
-  attempts        Attempt[]
-  StudentProfile  StudentProfile?
-  TeacherProfile  TeacherProfile?
+  applications   Application[]
+  exams          Exam[]          @relation("TeacherExams")
+  attempts       Attempt[]
+  StudentProfile StudentProfile?
+  TeacherProfile TeacherProfile?
 
   // A student can be enrolled in multiple programs
   enrollments Enrollment[]
 }
 
 model StudentProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  fullName          String
-  dateOfBirth       DateTime
-  age               String
-  gender            String
+  fullName    String
+  dateOfBirth DateTime
+  age         String
+  gender      String
 
-  phoneNumber       String
-  address           String
+  phoneNumber String
+  address     String
 
-  guardianName      String?
-  guardianContact   String?
+  guardianName    String?
+  guardianContact String?
 
   previousEducation String?
 }
 
 model TeacherProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  fullName          String
-  phoneNumber       String
-  address           String?
+  fullName    String
+  phoneNumber String
+  address     String?
 
-  highestDegree     String?
-  certifications    String[]
-  experienceYears   Int?
-  languages         String[]
-  techSkills        String[]
+  highestDegree   String?
+  certifications  String[]
+  experienceYears Int?
+  languages       String[]
+  techSkills      String[]
 
-  bio               String?
-  equipment         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  bio       String?
+  equipment String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // NEW: Tracks if the teacher has accepted the terms and conditions.
-  acceptedTerms     Boolean   @default(false)
+  acceptedTerms Boolean @default(false)
 
   // One-to-one relation for payment details.
-  paymentInfo       TeacherPaymentInfo?
+  paymentInfo TeacherPaymentInfo?
 
-  // A teacher can teach many courses
-  coursesTaught     Course[] @relation("TeacherCourses")
+  // A teacher can teach many subjects
+  subjectsTaught Subject[]
 }
 
 // NEW: Model to store teacher payment information.
 model TeacherPaymentInfo {
-  id                String    @id @default(uuid())
-  bankName          String
-  accountName       String
-  accountNumber     String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  bankName      String
+  accountName   String
+  accountNumber String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // One-to-one relationship with TeacherProfile.
-  teacherId         String    @unique
-  teacherProfile    TeacherProfile @relation(fields: [teacherId], references: [id])
+  teacherId      String         @unique
+  teacherProfile TeacherProfile @relation(fields: [teacherId], references: [id])
 }
 
 model Account {
@@ -110,8 +109,8 @@ model Account {
   id_token          String?
   session_state     String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -124,95 +123,78 @@ model Account {
 
 // This model defines the academic levels (Primary, JSS, Secondary)
 model Level {
-  id        String    @id @default(uuid())
-  name      String    @unique // e.g., "Primary", "JSS", "Secondary"
-  duration  String? // e.g., 6 (years)
-  programs  Program[]
-  exam  Exam[]
+  id       String    @id @default(uuid())
+  name     String    @unique // e.g., "Primary", "JSS", "Secondary"
+  duration String? // e.g., 6 (years)
+  programs Program[]
+  exam     Exam[]
 }
 
 // This model defines the academic tracks (Arabic, Western)
 model Track {
-  id        String    @id @default(uuid())
-  name      String    @unique // e.g., "Arabic", "Western"
-  programs  Program[]
-  exams  Exam[]
+  id       String    @id @default(uuid())
+  name     String    @unique // e.g., "Arabic", "Western"
+  programs Program[]
+  exams    Exam[]
 }
 
 // The main program model now relates to Levels and Tracks
 model Program {
-  id          String        @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String?
   duration    String?
+  type        ProgramType @default(CLASS)
 
   // New foreign keys referencing the Level and Track models
-  levelId     String
-  level       Level         @relation(fields: [levelId], references: [id])
+  levelId String
+  level   Level  @relation(fields: [levelId], references: [id])
 
-  trackId     String
-  track       Track         @relation(fields: [trackId], references: [id])
+  trackId String
+  track   Track  @relation(fields: [trackId], references: [id])
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // A program is composed of many courses
-  courses     Course[]      @relation("ProgramToCourse")
-
-  subjects    Subject[]     @relation("ProgramToSubject")
-  exams    Exam[]     
+  // A program is composed of many subjects
+  subjects Subject[] @relation("ProgramToSubject")
+  exams    Exam[]
 
   // Students are enrolled in a program through the Enrollment model
-  enrollments Enrollment[]
-  Application Application[]
-  
+  enrollments  Enrollment[]
+  applications Application[]
+
   // Pricing for the program
-  pricing     Pricing?
+  pricing Pricing?
 }
 
 // Represents a specific course (e.g., "JSS1 Mathematics")
-model Course {
-  id          String          @id @default(uuid())
-  name        String          @unique
-  description String?
-
-  // Link to the subject (e.g., "Mathematics")
-  subjectId   String
-  subject     Subject         @relation(fields: [subjectId], references: [id])
-
-  // Link to the parent program
-  programs    Program[]       @relation("ProgramToCourse")
-  exam    Exam[]     
-
-  // Many-to-many relationship with teachers
-  teachers    TeacherProfile[] @relation("TeacherCourses")
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
 
 // A generic subject (e.g., Mathematics, Physics, Quranic Studies)
 model Subject {
-  id          String      @id @default(uuid())
-  name        String      @unique
-  description String?
-  courses     Course[]
-  programs    Program[]   @relation("ProgramToSubject")
+  id               String          @id @default(uuid())
+  name             String          @unique
+  description      String?
+  // removed courses field
+  programs         Program[]       @relation("ProgramToSubject")
+  teacherProfile   TeacherProfile? @relation(fields: [teacherProfileId], references: [id])
+  teacherProfileId String?
+  exams            Exam[]
 }
 
 // Represents a student's enrollment in a specific program
 model Enrollment {
-  id          String    @id @default(uuid())
-  studentId   String
-  student     User      @relation(fields: [studentId], references: [id])
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
 
-  programId   String
-  program     Program   @relation(fields: [programId], references: [id])
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
 
-  status      String    @default("Active")
+  status String @default("Active")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([studentId, programId])
 }
@@ -222,40 +204,40 @@ model Enrollment {
 // ---------------------------------------------------------------- //
 
 model Application {
-  id          String            @id @default(uuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  type        AppType
+  type AppType
 
-  programId   String?
-  program     Program?          @relation(fields: [programId], references: [id])
+  programId String?
+  program   Program? @relation(fields: [programId], references: [id])
 
-  vacancyId   String?
-  vacancy     Vacancy?          @relation(fields: [vacancyId], references: [id])
+  vacancyId String?
+  vacancy   Vacancy? @relation(fields: [vacancyId], references: [id])
 
-  details     Json?
+  details Json?
 
-  status      ApplicationStatus @default(PENDING)
-  
+  status ApplicationStatus @default(PENDING)
+
   // Payment tracking for program applications
-  payment     Payment?
-  paymentStatus PaymentStatus   @default(PENDING)
-  
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  payment       Payment?
+  paymentStatus PaymentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vacancy {
-  id           String        @id @default(uuid())
+  id           String   @id @default(uuid())
   title        String
   description  String
   requirements String[]
   location     String
   type         JobType
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   applications Application[]
 }
@@ -265,29 +247,30 @@ model Vacancy {
 // ---------------------------------------------------------------- //
 
 model Exam {
-  id            String        @id @default(uuid())
-  title         String
-  createdBy     User          @relation("TeacherExams", fields: [createdById], references: [id])
-  createdById   String
-  term          TermType      @default(FIRST)
-  questions     Question[]
-  course     Course[]
-  attempts      Attempt[]
-  
-  track     Track         @relation(fields: [trackId], references: [id])
-  level     Level         @relation(fields: [levelId], references: [id])
-  program     Program         @relation(fields: [programId], references: [id])
+  id          String     @id @default(uuid())
+  title       String
+  createdBy   User       @relation("TeacherExams", fields: [createdById], references: [id])
+  createdById String
+  term        TermType   @default(FIRST)
+  questions   Question[]
+  attempts    Attempt[]
 
-  programId   String     @unique
-  trackId   String        @unique
-  levelId   String        @unique
+  track   Track   @relation(fields: [trackId], references: [id])
+  level   Level   @relation(fields: [levelId], references: [id])
+  program Program @relation(fields: [programId], references: [id])
+
+  programId String
+  trackId   String
+  levelId   String
+  subjectId String?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
 }
 
 model Question {
-  id      String      @id @default(uuid())
+  id      String           @id @default(uuid())
   text    String
   type    QuestionType
-  exam    Exam        @relation(fields: [examId], references: [id])
+  exam    Exam             @relation(fields: [examId], references: [id])
   examId  String
   options QuestionOption[]
 }
@@ -301,12 +284,12 @@ model QuestionOption {
 }
 
 model Attempt {
-  id      String    @id @default(uuid())
-  user    User      @relation(fields: [userId], references: [id])
-  userId  String
-  exam    Exam      @relation(fields: [examId], references: [id])
-  examId  String
-  score   Int?
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  exam   Exam   @relation(fields: [examId], references: [id])
+  examId String
+  score  Int?
 }
 
 // ---------------------------------------------------------------- //
@@ -314,25 +297,25 @@ model Attempt {
 // ---------------------------------------------------------------- //
 
 model Payment {
-  id                String          @id @default(uuid())
-  applicationId     String          @unique
-  application       Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  userId            String
-  
-  amount            Decimal         @db.Decimal(10, 2) // Amount paid
-  currency          String          @default("NGN")
-  
-  receiptUrl        String          // URL to uploaded receipt/proof of payment
-  receiptFileName   String?         // Original file name
-  
-  status            PaymentStatus   @default(PENDING)
-  approvedBy        String?         // Admin user ID who approved this
-  approvalNotes     String?         // Admin notes for rejection or verification
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  approvedAt        DateTime?       // When admin approved/rejected
+  userId String
+
+  amount   Decimal @db.Decimal(10, 2) // Amount paid
+  currency String  @default("NGN")
+
+  receiptUrl      String // URL to uploaded receipt/proof of payment
+  receiptFileName String? // Original file name
+
+  status        PaymentStatus @default(PENDING)
+  approvedBy    String? // Admin user ID who approved this
+  approvalNotes String? // Admin notes for rejection or verification
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  approvedAt DateTime? // When admin approved/rejected
 }
 
 // ---------------------------------------------------------------- //
@@ -340,23 +323,23 @@ model Payment {
 // ---------------------------------------------------------------- //
 
 model Pricing {
-  id                String    @id @default(uuid())
-  programId         String    @unique
-  program           Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
-  
-  amount            Decimal   @db.Decimal(10, 2) // Price amount
-  currency          String    @default("NGN") // e.g., NGN, USD, GBP
-  billingCycle      String    @default("ANNUAL") // ANNUAL, SEMESTER, MONTHLY, ONE_TIME
-  description       String?
-  
+  id        String  @id @default(uuid())
+  programId String  @unique
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  amount       Decimal @db.Decimal(10, 2) // Price amount
+  currency     String  @default("NGN") // e.g., NGN, USD, GBP
+  billingCycle String  @default("ANNUAL") // ANNUAL, SEMESTER, MONTHLY, ONE_TIME
+  description  String?
+
   // Discounts & Add-ons
-  discountPercent   Float?    // e.g., 10 for 10% discount
-  discountEndDate   DateTime?
-  
-  isActive          Boolean   @default(true)
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  discountPercent Float? // e.g., 10 for 10% discount
+  discountEndDate DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------- //
@@ -382,10 +365,10 @@ enum ApplicationStatus {
 }
 
 enum PaymentStatus {
-  PENDING      // User has not submitted payment yet
-  SUBMITTED    // User submitted payment proof, awaiting admin verification
-  VERIFIED     // Admin approved the payment
-  REJECTED     // Admin rejected the payment proof
+  PENDING // User has not submitted payment yet
+  SUBMITTED // User submitted payment proof, awaiting admin verification
+  VERIFIED // Admin approved the payment
+  REJECTED // Admin rejected the payment proof
 }
 
 enum QuestionType {
@@ -393,6 +376,12 @@ enum QuestionType {
   TRUE_FALSE
   SHORT_ANSWER
   ESSAY
+}
+
+enum ProgramType {
+  CLASS
+  DEPARTMENT
+  OTHER
 }
 
 enum TermType {

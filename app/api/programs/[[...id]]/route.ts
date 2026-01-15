@@ -9,7 +9,7 @@ const programSchema = z.object({
   description: z.string().optional(),
   levelId: z.string().min(1, { message: "Level ID is required." }),
   trackId: z.string().min(1, { message: "Track ID is required." }),
-  courseIds: z.array(z.string()).optional(),
+ 
   subjectIds: z.array(z.string()).optional(),
 });
 
@@ -21,7 +21,7 @@ export async function GET() {
       include: {
         level: true,
         track: true,
-        courses: true, // Include the related courses
+      
         subjects: true, // Include the related subjects
       },
     });
@@ -49,9 +49,7 @@ export async function POST(req: Request) {
         levelId: validatedData.levelId,
         trackId: validatedData.trackId,
         // Connect to courses and subjects if IDs are provided
-        courses: {
-          connect: validatedData.courseIds?.map((id) => ({ id })),
-        },
+       
         subjects: {
           connect: validatedData.subjectIds?.map((id) => ({ id })),
         },
@@ -98,9 +96,7 @@ export async function PUT(req: Request) {
         description: validatedData.description,
         levelId: validatedData.levelId,
         trackId: validatedData.trackId,
-        courses: {
-          set: validatedData.courseIds?.map((id) => ({ id })),
-        },
+        
         subjects: {
           set: validatedData.subjectIds?.map((id) => ({ id })),
         },

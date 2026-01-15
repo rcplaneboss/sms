@@ -44,7 +44,7 @@ export default function StudentExamsPage() {
 
   const fetchExams = async () => {
     try {
-      const response = await fetch("/api/exams");
+      const response = await fetch("/api/exams/eligible");
       if (response.ok) {
         const data = await response.json();
         setExams(data);

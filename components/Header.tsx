@@ -14,14 +14,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { publicNav, studentNav, teacherNav, adminNav } from "@/lib/navConfig";
+import { publicNav, studentNav, teacherNav, adminNav, adminNavGroups } from "@/lib/navConfig";
 
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   const { data: session } = useSession();
   const role = session?.user?.role.toLowerCase();
@@ -138,44 +140,57 @@ const Header = () => {
                   <Menu className="h-6 w-6" />
                 </button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+              <SheetContent side="right" className="w-[250px] sm:w-[300px] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Al-Itqan</SheetTitle>
                 </SheetHeader>
-                <nav className="mt-6 flex flex-col gap-4 px-6">
-                  {items.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      className="text-base font-medium text-slate-700 dark:text-slate-200 hover:underline"
-                      onClick={() => setOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                  {session?.user?.id && (
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      className="max-md:hidden cursor-pointer"
-                    >
-                      Log out
-                    </Button>
+                <nav className="mt-6 flex flex-col gap-2 px-4">
+                  {role === "admin" ? (
+                    // Admin accordion navigation
+                    adminNavGroups.map((group) => (
+                      <div key={group.label} className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <button
+                          onClick={() => setExpandedGroup(expandedGroup === group.label ? null : group.label)}
+                          className="w-full flex items-center justify-between py-2 text-sm font-semibold text-slate-700 dark:text-slate-200"
+                        >
+                          {group.label}
+                          <ChevronDown className={`h-4 w-4 transition-transform ${expandedGroup === group.label ? 'rotate-180' : ''}`} />
+                        </button>
+                        {expandedGroup === group.label && (
+                          <div className="flex flex-col gap-1 pl-3 mt-1">
+                            {group.items.map((link) => (
+                              <Link
+                                key={link.label}
+                                href={link.href}
+                                className="text-sm py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                                onClick={() => setOpen(false)}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    // Regular navigation for other roles
+                    items.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className="text-base font-medium text-slate-700 dark:text-slate-200 hover:underline py-2"
+                        onClick={() => setOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    ))
                   )}
-
-                  {role !== "admin" && role !== "student" && role !== "teacher" && (
-                    <Button href="/about" variant="primary" className="mt-4">
-                      Contact Us
-                    </Button>
-                  )}
-
                   {session?.user?.id && (
                     <Button
                       variant="primary"
                       size="sm"
                       onClick={() => signOut({ callbackUrl: "/" })}
-                      className="max-md:flex cursor-pointer hidden"
+                      className="mt-4 w-full"
                     >
                       Log out
                     </Button>

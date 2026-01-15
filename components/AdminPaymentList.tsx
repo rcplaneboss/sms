@@ -30,7 +30,7 @@ interface Payment {
     program: {
       id: string;
       name: string;
-    };
+    } | null;
   };
 }
 
@@ -236,7 +236,7 @@ export function AdminPaymentList({
                   Actions
                 </th>
               </tr>
-            </thead>
+            </thead> 
             <tbody>
               {payments.map((payment) => (
                 <tr
@@ -254,7 +254,7 @@ export function AdminPaymentList({
                     </div>
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                    {payment?.application?.program?.name}
+                    {payment?.application?.program?.name || "N/A"}
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                     {formatCurrency(Number(payment.amount), payment.currency)}
@@ -312,7 +312,7 @@ export function AdminPaymentList({
                     Program
                   </p>
                   <p className="font-medium text-slate-900 dark:text-white">
-                    {selectedPayment.application.program.name}
+                    {selectedPayment.application.program?.name || "N/A"}
                   </p>
                 </div>
                 <div>

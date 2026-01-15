@@ -30,7 +30,9 @@ interface Track {
   name: string;
 }
 
-interface Course {
+
+
+interface Subject {
   id: string;
   name: string;
 }
@@ -42,7 +44,6 @@ interface Program {
   description?: string;
   levelId: string;
   trackId: string;
-  courses: Course[];
   subjects: Subject[];
 }
 
@@ -53,7 +54,6 @@ interface Exam {
   questions: { id: string; text: string; type: string; options?: { id: string; text: string; isCorrect: boolean }[] }[];
   track: Track | null;
   level: Level | null;
-  course: Course | null;
   program: Program | null;
   createdBy: { name: string };
   attempts: { id: string; score: number | null }[];
@@ -71,7 +71,7 @@ export default function AdminExamsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -79,6 +79,7 @@ export default function AdminExamsPage() {
   const [newExamProgram, setNewExamProgram] = useState("");
   const [newExamTrack, setNewExamTrack] = useState("");
   const [newExamLevel, setNewExamLevel] = useState("");
+  const [newExamSubject, setNewExamSubject] = useState("");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -101,19 +102,20 @@ export default function AdminExamsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [programsRes, levelsRes, tracksRes, coursesRes] =
+
+      const [programsRes, levelsRes, tracksRes, subjectsRes] =
         await Promise.all([
           fetch("/api/programs"),
           fetch("/api/levels"),
           fetch("/api/tracks"),
-          fetch("/api/courses"),
+          fetch("/api/subjects"),
         ]);
 
       if (
         !programsRes.ok ||
         !levelsRes.ok ||
         !tracksRes.ok ||
-        !coursesRes.ok
+        !subjectsRes.ok
       ) {
         throw new Error("Failed to fetch data");
       }
@@ -121,12 +123,12 @@ export default function AdminExamsPage() {
       const programsData: Program[] = await programsRes.json();
       const levelsData: Level[] = await levelsRes.json();
       const tracksData: Track[] = await tracksRes.json();
-      const coursesData: Course[] = await coursesRes.json();
+      const subjectsData: Subject[] = await subjectsRes.json();
 
       setPrograms(programsData);
       setLevels(levelsData);
       setTracks(tracksData);
-      setCourses(coursesData);
+      setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data. Please try again.");
@@ -177,18 +179,31 @@ export default function AdminExamsPage() {
       return;
     }
 
+    if (!newExamSubject) {
+      toast.error("Subject is required");
+      return;
+    }
     setCreating(true);
     try {
       const response = await fetch("/api/exams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newExamTitle, programId: newExamProgram, levelId: newExamLevel, trackId: newExamTrack }),
+        body: JSON.stringify({
+          title: newExamTitle,
+          programId: newExamProgram,
+          
+          levelId: newExamLevel,
+          trackId: newExamTrack,
+          subjectId: newExamSubject,
+          
+        }),
       });
 
       if (response.ok) {
         const newExam = await response.json();
         setExams([newExam, ...exams]);
         setNewExamTitle("");
+        setNewExamSubject("");
         toast.success("Exam created successfully");
       } else {
         toast.error("Failed to create exam");
@@ -394,6 +409,21 @@ export default function AdminExamsPage() {
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                 
+
+                        <div className="">
+                          <select name="subject" id="subject" className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" defaultValue='' onChange={(e)=>{
+                            setNewExamSubject(e.target.value)
+                          }}>
+                            <option value="" disabled>Select a subject</option>
+                            {subjects.map((subject) => (
+                              <option key={subject.id} value={subject.id}>
+                                {subject.name}
+                              </option>
+                            ))}
+                          </select>
                     </div>
 
                     <div className="">

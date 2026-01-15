@@ -24,6 +24,25 @@ export async function POST(
       return NextResponse.json({ error: "Exam not found" }, { status: 404 });
     }
 
+    // Verify enrollment
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { studentId: session.user.id, programId: exam.programId }
+    });
+
+    if (!enrollment) {
+      return NextResponse.json({ error: "Not enrolled in program" }, { status: 403 });
+    }
+
+    // Verify payment/application
+    const application = await prisma.application.findFirst({
+      where: { userId: session.user.id, programId: exam.programId },
+      select: { paymentStatus: true }
+    });
+
+    if (!application || application.paymentStatus !== "VERIFIED") {
+      return NextResponse.json({ error: "Payment not verified for this program" }, { status: 403 });
+    }
+
     // Check if student already has an attempt
     const existingAttempt = await prisma.attempt.findFirst({
       where: {

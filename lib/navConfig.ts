@@ -31,14 +31,38 @@ export const adminNav = [
   { href: "/admin/payments", label: "Payments" },
   { href: "/assignments", label: "Assignments" },
   { href: "/exams", label: "Exams" },
-  { href: "/pricing-list", label: "Pricing" },
-  { href: "/adverts", label: "Adverts" },
   { href: "/reports", label: "Reports" },
   { href: "/settings", label: "Settings" },
-  { href: "/admin-program", label: "Programs" },
-  { href: "/levels", label: "Levels" },
-  { href: "/tracks", label: "Tracks" },
-  { href: "/subjects", label: "Subjects" },
-  { href: "/courses", label: "Courses" },
-  
+];
+
+export const adminNavGroups = [
+  {
+    label: "Main",
+    items: [
+      { href: "/admin-dashboard", label: "Dashboard" },
+      { href: "/approvals", label: "Approvals" },
+      { href: "/admin/payments", label: "Payments" },
+    ]
+  },
+  {
+    label: "Academic",
+    items: [
+      { href: "/assignments", label: "Assignments" },
+      { href: "/exams", label: "Exams" },
+      { href: "/admin-program", label: "Programs" },
+      { href: "/levels", label: "Levels" },
+      { href: "/tracks", label: "Tracks" },
+      { href: "/subjects", label: "Subjects" },
+      { href: "/courses", label: "Courses" },
+    ]
+  },
+  {
+    label: "Management",
+    items: [
+      { href: "/pricing-list", label: "Pricing" },
+      { href: "/adverts", label: "Adverts" },
+      { href: "/reports", label: "Reports" },
+      { href: "/settings", label: "Settings" },
+    ]
+  }
 ];
