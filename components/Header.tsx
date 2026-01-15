@@ -38,7 +38,7 @@ const Header = () => {
   const hiddenItems = items.slice(5);
 
   return (
-    <main className="flex flex-col w-full sticky top-0 z-50">
+    <main className="flex flex-col w-full sticky top-0 z-50 overflow-x-hidden">
       {/* Dark mode toggle bar */}
       <DarkModeToggle />
       <div className="bg-p1-hex px-30 w-screen flex font-mono text-t-light h-10 max-md:px-8">

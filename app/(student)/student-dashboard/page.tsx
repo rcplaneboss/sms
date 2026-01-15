@@ -262,7 +262,7 @@ export default function StudentDashboard() {
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                           <div>
                             <h3 className="font-semibold text-slate-900 dark:text-white">
-                              {app.program.name}
+                              {app.program?.name}
                             </h3>
                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                               Applied on {formatDate(app.createdAt)}
@@ -361,7 +361,7 @@ export default function StudentDashboard() {
                       <CardContent className="pt-4 pb-4">
                         <div className="space-y-2">
                           <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
-                            {payment.application.program.name}
+                            {payment.application.program?.name}
                           </p>
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-slate-900 dark:text-white">
