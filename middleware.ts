@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth"; 
+import { auth } from "@/auth-edge"; 
 
 // Define protected routes and the roles that can access them
 const roleBasedAccess = {
