@@ -62,6 +62,7 @@ export const adminNavGroups = [
   {
     label: "Management",
     items: [
+      { href: "/user-management", label: "User Management" },
       { href: "/pricing-list", label: "Pricing" },
       { href: "/adverts", label: "Adverts" },
       { href: "/reports", label: "Reports" },

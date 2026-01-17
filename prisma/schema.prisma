@@ -12,16 +12,18 @@ datasource db {
 // ---------------------------------------------------------------- //
 
 model User {
-  id            String    @id @default(uuid())
+  id            String     @id @default(uuid())
   name          String?
-  email         String    @unique
+  email         String     @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(STUDENT)
+  role          Role       @default(STUDENT)
+  status        UserStatus @default(ACTIVE)
   password      String?
+  lastLogin     DateTime?
   accounts      Account[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   applications   Application[]
   exams          Exam[]          @relation("TeacherExams")
@@ -520,4 +522,11 @@ enum JobType {
 enum ExamType {
   CA
   EXAM
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
 }

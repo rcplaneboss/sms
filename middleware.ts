@@ -19,7 +19,8 @@ const roleBasedAccess = {
     "/tracks",
     "/subjects",
     "/courses",
-    "/grade-overview"
+    "/grade-overview",
+    "/user-management",
   ],
   teacher: [
     "/teacher-dashboard",
@@ -29,7 +30,7 @@ const roleBasedAccess = {
     "/teacher-onboard",
     "/assigned-courses",
     "/exams/create",
-    "/exams"
+    "/exams",
   ],
   student: [
     "/student-dashboard",
@@ -89,7 +90,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/access-denied", nextUrl));
   }
 
-  const allowedRoutes = roleBasedAccess[userRole.toLowerCase() as keyof typeof roleBasedAccess];
+  const normalizedRole = userRole.toLowerCase() as keyof typeof roleBasedAccess;
+  const allowedRoutes = roleBasedAccess[normalizedRole];
   const hasAccess = allowedRoutes?.some((route) => pathname.startsWith(route));
 
   // If the user doesn't have access, redirect to an "access denied" page
