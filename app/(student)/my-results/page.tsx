@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardStatCard } from "@/components/DashboardStatCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ interface StudentResult {
 }
 
 export default function StudentResultsPage() {
+  const router = useRouter();
   const { data: session, status } = useSession({
     required: true,
     onUnauthenticated() {
@@ -196,7 +197,7 @@ export default function StudentResultsPage() {
                       <td className="px-4 py-3">
                         {result.score !== null && (
                           <Button
-                            onClick={() => window.location.href = `/my-results/${result.id}`}
+                            onClick={() => router.push(`/my-results/${result.id}`)}
                             variant="outline"
                             size="sm"
                             className="gap-2"
