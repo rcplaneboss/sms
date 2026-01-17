@@ -26,7 +26,7 @@ const PoppinsSans = Poppins({
 function TeacherLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = window.location.pathname;
+  const pathname = window?.location?.pathname;
 
   useEffect(() => {
     if (status === "loading") return;
@@ -37,7 +37,7 @@ function TeacherLayoutContent({ children }: { children: React.ReactNode }) {
         .then(res => res.json())
         .then(data => {
           if (data.teacherProfile && !data.teacherProfile.acceptedTerms) {
-            window.location.replace("/teacher-onboard");
+            window?.location?.replace("/teacher-onboard");
           }
         })
         .catch(console.error);

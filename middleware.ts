@@ -28,6 +28,8 @@ const roleBasedAccess = {
     "/grading",
     "/teacher-onboard",
     "/assigned-courses",
+    "/exams/create",
+    "/exams"
   ],
   student: [
     "/student-dashboard",
