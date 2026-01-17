@@ -13,7 +13,6 @@ import {
   Award,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
 
 interface StudentResult {
   id: string;
@@ -53,7 +52,7 @@ export default function StudentResultsPage() {
       }
     } catch (error) {
       console.error("Error fetching results:", error);
-      toast.error("Failed to load results");
+      // Remove toast to avoid SSR issues
     } finally {
       setLoading(false);
     }

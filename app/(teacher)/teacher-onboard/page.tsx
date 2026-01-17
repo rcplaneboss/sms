@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import { Toaster, toast } from "sonner";
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/LinkAsButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+
+// Dynamically import Toaster to avoid SSR issues
+const Toaster = dynamic(() => import("sonner").then(mod => ({ default: mod.Toaster })), {
+  ssr: false
+});
+
+const toast = typeof window !== 'undefined' ? require('sonner').toast : { loading: () => {}, success: () => {}, error: () => {} };
 
 // Define the Zod schema for form validation
 const formSchema = z.object({
@@ -31,7 +38,7 @@ const TeacherAcceptancePage = () => {
   });
 
   const onSubmit = async (data) => {
-    const toastId = toast.loading("Saving your details...");
+    const toastId = typeof window !== 'undefined' ? toast.loading("Saving your details...") : null;
     try {
       const res = await fetch("/api/teacher-onboarding", {
         method: "PUT",
@@ -45,10 +52,14 @@ const TeacherAcceptancePage = () => {
       }
 
       setIsDataSubmitted(true);
-      toast.success("Details saved successfully!", { id: toastId });
+      if (typeof window !== 'undefined') {
+        toast.success("Details saved successfully!", { id: toastId });
+      }
     } catch (error) {
       console.error("Error saving data:", error);
-      toast.error(`Failed to save details. ${error.message}`, { id: toastId });
+      if (typeof window !== 'undefined') {
+        toast.error(`Failed to save details. ${error.message}`, { id: toastId });
+      }
     }
   };
 
