@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { SessionProvider } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const MontserratSans = Montserrat({
   variable: "--font-montserrat-sans",
@@ -26,23 +26,23 @@ const PoppinsSans = Poppins({
 function TeacherLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = window?.location?.pathname;
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status === "loading") return;
-    if (pathname === "/teacher-onboard") return; // Don't redirect if already on onboard page
+    if (pathname === "/teacher-onboard") return;
     
     if (session?.user?.role === "TEACHER") {
       fetch("/api/teacher/profile")
         .then(res => res.json())
         .then(data => {
           if (data.teacherProfile && !data.teacherProfile.acceptedTerms) {
-            window?.location?.replace("/teacher-onboard");
+            router.replace("/teacher-onboard");
           }
         })
         .catch(console.error);
     }
-  }, [session, status, pathname]);
+  }, [session, status, pathname, router]);
 
   return (
     <>
