@@ -154,7 +154,7 @@ export default function StudentPaymentsPage() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      {payment.application.program.name}
+                      {payment.application.program?.name}
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                       Submitted on {formatDate(payment.createdAt)}

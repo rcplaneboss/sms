@@ -18,7 +18,8 @@ const roleBasedAccess = {
     "/levels",
     "/tracks",
     "/subjects",
-    "/courses"
+    "/courses",
+    "/grade-overview"
   ],
   teacher: [
     "/teacher-dashboard",
@@ -32,7 +33,7 @@ const roleBasedAccess = {
     "/student-dashboard",
     "/exams",
     "/exams/",
-    "/results",
+    "/my-results",
     "/payments",
     "/programs",
     '/my-exams'
@@ -52,6 +53,7 @@ const publicPaths = [
   "/contact",
   "/apply-teacher",
   "/vacancy/[id]",
+  "/access-denied",
 ];
 
 // Use the `auth` handler directly as the middleware
@@ -61,20 +63,15 @@ export default auth((req) => {
 
   const user = req.auth;
 
-  // Case 1: Handle Public Paths
-  // If the user is authenticated and on a public page, redirect them to their dashboard
-  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/") || pathname.startsWith("/programs/")) {
-    if (user) {
-      const userRole = user.user?.role as keyof typeof roleBasedAccess;
-      const redirectTo = roleBasedAccess[userRole.toLowerCase()]?.[0];
-      if (redirectTo) {
-        return NextResponse.redirect(new URL(redirectTo, nextUrl));
-      }
-    }
+  // Case 0: Always allow API routes
+  if (pathname.startsWith("/api/")) {
     return NextResponse.next();
+  }
 
-
-    
+  // Case 1: Handle Public Paths
+  // Allow everyone to access public pages
+  if (publicPaths.includes(pathname) || pathname.startsWith("/vacancy/") || pathname.startsWith("/programs/")) {
+    return NextResponse.next();
   }
 
   // Case 2: Handle Unauthenticated Access
@@ -85,9 +82,13 @@ export default auth((req) => {
 
   // Case 3: Handle Role-Based Access Control (RBAC)
   const userRole = user.user?.role as keyof typeof roleBasedAccess;
-  const hasAccess = roleBasedAccess[userRole.toLowerCase()]?.some((route) =>
-    pathname.startsWith(route)
-  );
+  
+  if (!userRole) {
+    return NextResponse.redirect(new URL("/access-denied", nextUrl));
+  }
+
+  const allowedRoutes = roleBasedAccess[userRole.toLowerCase() as keyof typeof roleBasedAccess];
+  const hasAccess = allowedRoutes?.some((route) => pathname.startsWith(route));
 
   // If the user doesn't have access, redirect to an "access denied" page
   if (!hasAccess) {
@@ -100,5 +101,7 @@ export default auth((req) => {
 
 // Configure the matcher to run on all paths except static files and API routes
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)"
+  ],
 };

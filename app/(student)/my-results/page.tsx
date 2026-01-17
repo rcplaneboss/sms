@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardStatCard } from "@/components/DashboardStatCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   BarChart3,
   TrendingUp,
@@ -150,6 +151,9 @@ export default function StudentResultsPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">
                       Date
                     </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -187,6 +191,19 @@ export default function StudentResultsPage() {
                         {new Date(result.createdAt).toLocaleDateString(
                           "en-US",
                           { year: "numeric", month: "short", day: "numeric" }
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {result.score !== null && (
+                          <Button
+                            onClick={() => window.location.href = `/my-results/${result.id}`}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                          >
+                            <BookOpen className="h-4 w-4" />
+                            View Details
+                          </Button>
                         )}
                       </td>
                     </tr>

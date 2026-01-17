@@ -9,7 +9,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
   Send,
   AlertCircle,
   Loader2,
@@ -25,8 +24,10 @@ interface Question {
 interface ExamData {
   id: string;
   title: string;
+  duration: number;
   questions: Question[];
   createdBy: { name: string };
+  attempts: { id: string; score: number | null }[];
 }
 
 export default function ExamTakerPage({
@@ -46,16 +47,15 @@ export default function ExamTakerPage({
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [timeLeft, setTimeLeft] = useState(60 * 60); // 1 hour
+  const [timeLeft, setTimeLeft] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [tabSwitches, setTabSwitches] = useState(0);
 
-  // Extract examId from params
   useEffect(() => {
     params.then((p) => setExamId(p.examId));
   }, [params]);
 
-  // Fetch exam data
   useEffect(() => {
     if (!examId) return;
 
@@ -65,6 +65,7 @@ export default function ExamTakerPage({
         if (response.ok) {
           const data = await response.json();
           setExamData(data);
+          setTimeLeft((data.duration || 60) * 60);
         } else {
           toast.error("Exam not found");
           redirect("/my-exams");
@@ -80,7 +81,37 @@ export default function ExamTakerPage({
     fetchExam();
   }, [examId]);
 
-  // Timer countdown
+  useEffect(() => {
+    if (submitted) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitches(prev => prev + 1);
+        toast.warning("Tab switch detected! This will be reported.");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [submitted]);
+
+  useEffect(() => {
+    if (submitted) return;
+
+    const preventCopy = (e: Event) => e.preventDefault();
+    const preventContextMenu = (e: Event) => e.preventDefault();
+
+    document.addEventListener("copy", preventCopy);
+    document.addEventListener("cut", preventCopy);
+    document.addEventListener("contextmenu", preventContextMenu);
+
+    return () => {
+      document.removeEventListener("copy", preventCopy);
+      document.removeEventListener("cut", preventCopy);
+      document.removeEventListener("contextmenu", preventContextMenu);
+    };
+  }, [submitted]);
+
   useEffect(() => {
     if (submitted || !examData) return;
 
@@ -116,16 +147,21 @@ export default function ExamTakerPage({
 
     setSubmitting(true);
     try {
-      // For now, just calculate score based on answers
-      // In a real system, this would be validated on the backend
       const score = Math.round((Object.keys(answers).length / examData?.questions.length!) * 100);
+      const attemptId = examData?.attempts?.[0]?.id;
 
-      const response = await fetch(`/api/attempts/${examData?.id}`, {
+      if (!attemptId) {
+        toast.error("No attempt found");
+        return;
+      }
+
+      const response = await fetch(`/api/attempts/${attemptId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           score: score,
           answers: answers,
+          tabSwitches: tabSwitches,
         }),
       });
 
@@ -181,8 +217,13 @@ export default function ExamTakerPage({
               <p className="text-slate-600 dark:text-slate-400">
                 Your exam has been submitted successfully. Your score will be calculated by the instructor.
               </p>
+              {tabSwitches > 0 && (
+                <p className="text-sm text-orange-600 dark:text-orange-400 mt-2">
+                  Note: {tabSwitches} tab switch(es) detected during exam.
+                </p>
+              )}
             </div>
-            <Button onClick={() => redirect("/my-exams")} className="w-full">
+            <Button onClick={() => window.location.href = "/my-exams"} className="w-full">
               Back to Exams
             </Button>
           </CardContent>
@@ -198,7 +239,6 @@ export default function ExamTakerPage({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -216,18 +256,15 @@ export default function ExamTakerPage({
           </div>
         </div>
 
-        {/* Question Card */}
         <Card className="border border-slate-200 dark:border-slate-700 mb-8">
           <CardContent className="pt-8 pb-8">
             <div className="space-y-6">
-              {/* Question Text */}
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
                   {currentQuestion.text || `Question ${currentQuestionIndex + 1}`}
                 </h2>
               </div>
 
-              {/* Answer Input based on question type */}
               <div>
                 {currentQuestion.type === "MCQ" && (
                   <div className="space-y-3">
@@ -296,7 +333,6 @@ export default function ExamTakerPage({
           </CardContent>
         </Card>
 
-        {/* Navigation and Submit */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <div className="flex gap-2">
             <Button
@@ -349,7 +385,6 @@ export default function ExamTakerPage({
           )}
         </div>
 
-        {/* Question Progress */}
         <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700">
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
             Progress: {Object.keys(answers).length} of{" "}

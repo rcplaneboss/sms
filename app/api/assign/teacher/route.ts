@@ -8,26 +8,26 @@ export async function GET(req: Request) {
 
     const teacherProfile = await prisma.teacherProfile.findUnique({
       where: { userId },
-      // Select the courses taught and related details necessary for the frontend display
       select: {
-        coursesTaught: {
+        assignments: {
           select: {
-            id: true,
-            name: true,
             subject: {
-              select: { name: true }, // Get the Subject name
-            },
-            programs: {
-              // Get details about the program (e.g., JSS1 Mathematics -> JSS1 Program)
               select: {
-                name: true,
-                level: { select: { name: true } }, // Get the Level name (e.g., JSS)
-              },
-             
+                id: true,
+                name: true
+              }
             },
-          },
-        },
-      },
+            program: {
+              select: {
+                id: true,
+                name: true,
+                level: { select: { name: true } },
+                track: { select: { name: true } }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!teacherProfile) {
@@ -37,9 +37,23 @@ export async function GET(req: Request) {
       );
     }
 
-    // Return the list of courses
+    // Transform assignments to match expected frontend format
+    const courses = teacherProfile.assignments.map(assignment => ({
+      id: `${assignment.subject.id}-${assignment.program.id}`,
+      name: `${assignment.subject.name} - ${assignment.program.name}`,
+      subject: { 
+        id: assignment.subject.id,
+        name: assignment.subject.name 
+      },
+      programs: [{
+        id: assignment.program.id,
+        name: assignment.program.name,
+        level: { name: assignment.program.level.name }
+      }]
+    }));
+
     return NextResponse.json(
-      { courses: teacherProfile.coursesTaught },
+      { courses },
       { status: 200 }
     );
   } catch (error) {

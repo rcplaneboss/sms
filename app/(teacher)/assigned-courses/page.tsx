@@ -130,7 +130,7 @@ const TeacherAssignmentPage = () => {
             My Teaching Assignments
           </h1>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            View the courses and programs you have been assigned to teach this
+            View the subjects and programs you have been assigned to teach this
             session.
           </p>
         </header>

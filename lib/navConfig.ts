@@ -22,6 +22,8 @@ export const teacherNav = [
   { href: "/teacher-dashboard", label: "Dashboard" },
   { href: "/classes", label: "Classes" },
   { href: "/assigned-courses", label: "My Assignments" },
+  { href: "/grading/grades", label: "Grading" },
+  { href: "/grading/calculate", label: "Calculate Grades" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -49,6 +51,7 @@ export const adminNavGroups = [
     items: [
       { href: "/assignments", label: "Assignments" },
       { href: "/exams", label: "Exams" },
+      { href: "/grade-overview", label: "Grade Overview" },
       { href: "/admin-program", label: "Programs" },
       { href: "/levels", label: "Levels" },
       { href: "/tracks", label: "Tracks" },

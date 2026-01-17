@@ -26,21 +26,15 @@ export async function POST(
 
     // Verify enrollment
     const enrollment = await prisma.enrollment.findFirst({
-      where: { studentId: session.user.id, programId: exam.programId }
+      where: { 
+        studentId: session.user.id, 
+        programId: exam.programId,
+        status: "Active"
+      }
     });
 
     if (!enrollment) {
-      return NextResponse.json({ error: "Not enrolled in program" }, { status: 403 });
-    }
-
-    // Verify payment/application
-    const application = await prisma.application.findFirst({
-      where: { userId: session.user.id, programId: exam.programId },
-      select: { paymentStatus: true }
-    });
-
-    if (!application || application.paymentStatus !== "VERIFIED") {
-      return NextResponse.json({ error: "Payment not verified for this program" }, { status: 403 });
+      return NextResponse.json({ error: "Not enrolled in this program" }, { status: 403 });
     }
 
     // Check if student already has an attempt

@@ -64,7 +64,6 @@ export async function GET(req: NextRequest) {
 
     const applications = await prisma.application.findMany({
       where: {
-        type: "TEACHER",
         status: {
           in: ["PENDING", "INTERVIEW_SCHEDULED"],
         },
@@ -241,8 +240,10 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const { searchParams } = new URL(req.url);
     const body = await req.json();
-    const { id, status, message } = body;
+    const { status, message } = body;
+    const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
@@ -268,6 +269,17 @@ export async function PUT(req: NextRequest) {
       await prisma.user.update({
         where: { id: updatedApplication.userId },
         data: { role: "TEACHER" },
+      });
+    }
+
+    // If approving a student application, create enrollment
+    if (validatedData.status === "APPROVED" && updatedApplication.type === "STUDENT" && updatedApplication.programId) {
+      await prisma.enrollment.create({
+        data: {
+          studentId: updatedApplication.userId,
+          programId: updatedApplication.programId,
+          status: "Active",
+        },
       });
     }
 

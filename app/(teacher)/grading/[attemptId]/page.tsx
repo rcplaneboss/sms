@@ -277,6 +277,14 @@ export default function TeacherGradingPage({
               </>
             )}
           </Button>
+          <Button
+            onClick={() => redirect(`/grading/questions/${attemptId}`)}
+            variant="outline"
+            className="gap-2"
+          >
+            <BookOpen className="h-4 w-4" />
+            Grade Questions
+          </Button>
         </div>
       </div>
     </div>

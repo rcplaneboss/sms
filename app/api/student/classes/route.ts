@@ -14,11 +14,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // For now, return empty array as we need to clarify the relationship between students and classes
-    // In a full implementation, this would join through enrollments -> programs -> courses -> teachers
-    const emptyClasses: any[] = [];
+    const { searchParams } = new URL(req.url);
+    const programId = searchParams.get("programId");
 
-    return NextResponse.json(emptyClasses);
+    if (!programId) {
+      return NextResponse.json({ students: [] });
+    }
+
+    // Get all students enrolled in the specified program
+    const enrollments = await prisma.enrollment.findMany({
+      where: {
+        programId,
+        status: "Active"
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    const students = enrollments.map(enrollment => enrollment.student);
+
+    return NextResponse.json({ students });
   } catch (error) {
     console.error("Error fetching student classes:", error);
     return NextResponse.json(

@@ -78,6 +78,26 @@ export async function PUT(
         },
       });
 
+      // Create enrollment for the student
+      if (updatedPayment.application.programId) {
+        await prisma.enrollment.upsert({
+          where: {
+            studentId_programId: {
+              studentId: updatedPayment.application.userId,
+              programId: updatedPayment.application.programId,
+            },
+          },
+          create: {
+            studentId: updatedPayment.application.userId,
+            programId: updatedPayment.application.programId,
+            status: "Active",
+          },
+          update: {
+            status: "Active",
+          },
+        });
+      }
+
       // Send approval email
       try {
         await sendPaymentApprovedEmail({

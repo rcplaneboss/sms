@@ -80,9 +80,13 @@ export default function AdminExamsPage() {
   const [newExamTrack, setNewExamTrack] = useState("");
   const [newExamLevel, setNewExamLevel] = useState("");
   const [newExamSubject, setNewExamSubject] = useState("");
+  const [newExamDuration, setNewExamDuration] = useState("60");
+  const [newExamType, setNewExamType] = useState("EXAM");
+  const [newExamTerm, setNewExamTerm] = useState("FIRST");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editDuration, setEditDuration] = useState("");
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newQuestionType, setNewQuestionType] = useState("MCQ");
   const [newOptions, setNewOptions] = useState<{ text: string; isCorrect: boolean }[]>([
@@ -191,11 +195,12 @@ export default function AdminExamsPage() {
         body: JSON.stringify({
           title: newExamTitle,
           programId: newExamProgram,
-          
           levelId: newExamLevel,
           trackId: newExamTrack,
           subjectId: newExamSubject,
-          
+          duration: parseInt(newExamDuration),
+          examType: newExamType,
+          term: newExamTerm,
         }),
       });
 
@@ -246,7 +251,10 @@ export default function AdminExamsPage() {
       const response = await fetch(`/api/exams/${examId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle }),
+        body: JSON.stringify({ 
+          title: editTitle,
+          duration: parseInt(editDuration) || 60
+        }),
       });
 
       if (response.ok) {
@@ -397,6 +405,38 @@ export default function AdminExamsPage() {
                     onChange={(e) => setNewExamTitle(e.target.value)}
                     disabled={creating}
                   />
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="number"
+                      placeholder="Duration (minutes)"
+                      value={newExamDuration}
+                      onChange={(e) => setNewExamDuration(e.target.value)}
+                      disabled={creating}
+                      min="1"
+                      className="w-48"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <select
+                        value={newExamType}
+                        onChange={(e) => setNewExamType(e.target.value)}
+                        className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        disabled={creating}
+                      >
+                        <option value="EXAM">Exam</option>
+                        <option value="CA">Continuous Assessment</option>
+                      </select>
+                      <select
+                        value={newExamTerm}
+                        onChange={(e) => setNewExamTerm(e.target.value)}
+                        className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        disabled={creating}
+                      >
+                        <option value="FIRST">First Term</option>
+                        <option value="SECOND">Second Term</option>
+                        <option value="THIRD">Third Term</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="flex max-md:flex-col mt-2 gap-4 w-full">
                     <div className="">
                       <select name="program" id="program" className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" defaultValue=""
@@ -499,11 +539,21 @@ export default function AdminExamsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         {editingExam === exam.id ? (
-                          <Input
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="mb-2"
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              placeholder="Exam title"
+                            />
+                            <Input
+                              type="number"
+                              value={editDuration}
+                              onChange={(e) => setEditDuration(e.target.value)}
+                              placeholder="Duration (minutes)"
+                              min="1"
+                              className="w-48"
+                            />
+                          </div>
                         ) : (
                           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                             {exam.title}
@@ -513,6 +563,16 @@ export default function AdminExamsPage() {
                           <span>{exam?.program?.name}</span> - 
                           <span>{exam?.level?.name}</span> -
                           <span>{exam?.track?.name}</span>
+                        </div>
+                        <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400 mt-1">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            exam.examType === 'CA' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          }`}>
+                            {exam.examType === 'CA' ? 'Continuous Assessment' : 'Examination'}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                            {exam.term} Term
+                          </span>
                         </div>
                         <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400 mt-2">
                           <span>{exam.questions.length} questions</span>
@@ -547,6 +607,7 @@ export default function AdminExamsPage() {
                               onClick={() => {
                                 setEditingExam(exam.id);
                                 setEditTitle(exam.title);
+                                setEditDuration(exam.duration?.toString() || "60");
                               }}
                               variant="outline"
                               size="sm"

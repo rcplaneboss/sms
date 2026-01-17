@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Users, FileText, BarChart3, Loader2, ArrowRight } from "lucide-react";
 
 interface TeacherStats {
-  assignedCourses: number;
+  assignedSubjects: number;
   totalStudents: number;
   pendingGrades: number;
-  courses: any[];
+  subjects: any[];
 }
 
 export default function TeacherDashboard() {
@@ -83,10 +83,10 @@ export default function TeacherDashboard() {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DashboardStatCard
-            title="Assigned Courses"
-            value={stats.assignedCourses}
+            title="Assigned Subjects"
+            value={stats.assignedSubjects}
             icon={<BookOpen className="h-5 w-5" />}
-            subtext="Courses you're teaching"
+            subtext="Subjects you're teaching"
           />
           <DashboardStatCard
             title="Total Students"
@@ -107,52 +107,51 @@ export default function TeacherDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              My Courses
+              My Subjects & Programs
             </h2>
           </div>
 
-          {stats.courses.length === 0 ? (
+          {stats.subjects?.length === 0 ? (
             <Card className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
               <CardContent className="pt-6 text-center">
                 <BookOpen className="h-12 w-12 mx-auto text-slate-400 dark:text-slate-600 mb-4" />
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
-                  No courses assigned yet
+                  No subjects assigned yet
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Your courses will appear here once they're assigned by the admin.
+                  Your subjects will appear here once they're assigned by the admin.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats.courses.map((course: any) => (
+            <div className="space-y-4">
+              {stats.subjects?.map((subject: any) => (
                 <Card
-                  key={course.id}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 hover:shadow-md transition"
+                  key={subject.id}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700"
                 >
                   <CardContent className="pt-6">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-white">
-                          {course.name}
-                        </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                          {course.subject.name}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <span className="text-xs text-slate-600 dark:text-slate-400">
-                          {course._count?.attempts || 0} student attempts
-                        </span>
-                        <Button
-                          href={`/grading?courseId=${course.id}`}
-                          variant="outline"
-                          size="sm"
+                    <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-4">
+                      {subject.name}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {subject.programs?.map((program: any) => (
+                        <div
+                          key={program.id}
+                          className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700"
                         >
-                          Grade
-                          <ArrowRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      </div>
+                          <h4 className="font-medium text-slate-900 dark:text-white">
+                            {program.name}
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            {program.level} - {program.track}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2 text-sm text-slate-600 dark:text-slate-400">
+                            <Users className="h-4 w-4" />
+                            <span>{program.studentCount} students</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>

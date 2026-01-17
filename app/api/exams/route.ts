@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { title, programId, levelId, trackId, subjectId } = await req.json();
+    const { title, programId, levelId, trackId, subjectId, duration, examType, term } = await req.json();
 
     if (!title || title.trim() === '') {
       return NextResponse.json(
@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
         levelId: levelId,
         trackId: trackId,
         subjectId: subjectId,
+        duration: duration || 60,
+        examType: examType || 'EXAM',
+        term: term || 'FIRST',
         createdById: session.user.id
       },
       include: {

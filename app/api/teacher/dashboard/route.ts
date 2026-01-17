@@ -13,17 +13,39 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get teacher profile with courses
+    // Get teacher profile with assignments
     const teacherProfile = await prisma.teacherProfile.findUnique({
       where: { userId: session.user.id },
       include: {
-        coursesTaught: {
+        assignments: {
           include: {
-            subject: { select: { name: true } },
-            _count: { select: { attempts: true } },
-          },
-        },
-      },
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            },
+            program: {
+              include: {
+                enrollments: {
+                  include: {
+                    student: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true
+                      }
+                    }
+                  }
+                },
+                level: { select: { name: true } },
+                track: { select: { name: true } }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!teacherProfile) {
@@ -33,14 +55,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Count total students across all courses (approximate)
-    const studentCount = await prisma.attempt.findMany({
-      where: {
-        exam: {
-          createdById: session.user.id,
-        },
-      },
-      distinct: ["userId"],
+    // Get unique students across all programs
+    const allStudents = new Set();
+    teacherProfile.assignments.forEach(assignment => {
+      assignment.program.enrollments.forEach(enrollment => {
+        allStudents.add(enrollment.student.id);
+      });
     });
 
     // Pending grades (attempts without scores)
@@ -53,11 +73,32 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Group assignments by subject
+    const subjectMap = new Map();
+    teacherProfile.assignments.forEach(assignment => {
+      const subjectId = assignment.subject.id;
+      if (!subjectMap.has(subjectId)) {
+        subjectMap.set(subjectId, {
+          id: assignment.subject.id,
+          name: assignment.subject.name,
+          programs: []
+        });
+      }
+      subjectMap.get(subjectId).programs.push({
+        id: assignment.program.id,
+        name: assignment.program.name,
+        level: assignment.program.level.name,
+        track: assignment.program.track.name,
+        studentCount: assignment.program.enrollments.length,
+        students: assignment.program.enrollments.map(e => e.student)
+      });
+    });
+
     return NextResponse.json({
-      assignedCourses: teacherProfile.coursesTaught.length,
-      totalStudents: studentCount.length,
+      assignedSubjects: subjectMap.size,
+      totalStudents: allStudents.size,
       pendingGrades,
-      courses: teacherProfile.coursesTaught,
+      subjects: Array.from(subjectMap.values())
     });
   } catch (error) {
     console.error("Error fetching teacher dashboard data:", error);

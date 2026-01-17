@@ -14,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { score, answers } = await req.json();
+    const { score, answers, tabSwitches } = await req.json();
 
     // Verify the attempt belongs to the current user
     const attempt = await prisma.attempt.findUnique({
@@ -29,10 +29,16 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Update the attempt with score
+    // Update the attempt with score and answers
     const updatedAttempt = await prisma.attempt.update({
       where: { id: attemptId },
-      data: { score: score }
+      data: { 
+        score: score,
+        answers: answers,
+        tabSwitches: tabSwitches || 0,
+        submittedAt: new Date(),
+        flaggedForReview: (tabSwitches || 0) > 3
+      }
     });
 
     return NextResponse.json(updatedAttempt);

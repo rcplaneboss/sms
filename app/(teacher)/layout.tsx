@@ -1,9 +1,14 @@
+"use client";
+
 import type { Metadata } from "next";
 import { Poppins, Montserrat } from "next/font/google";
 import "../globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SessionProvider } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const MontserratSans = Montserrat({
   variable: "--font-montserrat-sans",
@@ -18,11 +23,35 @@ const PoppinsSans = Poppins({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "School Management System",
-  description:
-    "A comprehensive school management system for efficient administration.",
-};
+function TeacherLayoutContent({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = window.location.pathname;
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (pathname === "/teacher-onboard") return; // Don't redirect if already on onboard page
+    
+    if (session?.user?.role === "TEACHER") {
+      fetch("/api/teacher/profile")
+        .then(res => res.json())
+        .then(data => {
+          if (data.teacherProfile && !data.teacherProfile.acceptedTerms) {
+            window.location.replace("/teacher-onboard");
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session, status, pathname]);
+
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
+  );
+}
 
 export default function Layout({
   children,
@@ -35,9 +64,7 @@ export default function Layout({
         className={`${MontserratSans.variable} ${PoppinsSans.variable} antialiased overflow-x-hidden`}
       >
         <SessionProvider>
-        <Header />
-        {children}
-        <Footer />
+          <TeacherLayoutContent>{children}</TeacherLayoutContent>
         </SessionProvider>
       </body>
     </html>

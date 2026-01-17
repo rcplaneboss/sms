@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
     const file = formData.get("receipt") as File;
     const applicationId = formData.get("applicationId") as string;
 
+    console.log("Payment submission:", { 
+      hasFile: !!file, 
+      fileType: file?.type,
+      fileSize: file?.size,
+      applicationId 
+    });
+
     // Validate inputs
     if (!file || !applicationId) {
       return NextResponse.json(
@@ -58,6 +65,15 @@ export async function POST(req: NextRequest) {
           },
         },
       },
+    });
+
+    console.log("Application found:", {
+      exists: !!application,
+      userId: application?.userId,
+      sessionUserId: session.user.id,
+      hasPayment: !!application?.payment,
+      hasPricing: !!application?.program?.pricing,
+      pricingActive: application?.program?.pricing?.isActive
     });
 
     if (!application) {

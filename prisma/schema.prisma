@@ -31,6 +31,13 @@ model User {
 
   // A student can be enrolled in multiple programs
   enrollments Enrollment[]
+  
+  // Grading relationships
+  studentGrades Grade[] @relation("StudentGrades")
+  teacherGrades Grade[] @relation("TeacherGrades")
+  
+  // Reports
+  studentReports Report[] @relation("StudentReports")
 }
 
 model StudentProfile {
@@ -75,11 +82,8 @@ model TeacherProfile {
   // NEW: Tracks if the teacher has accepted the terms and conditions.
   acceptedTerms Boolean @default(false)
 
-  // One-to-one relation for payment details.
   paymentInfo TeacherPaymentInfo?
-
-  // A teacher can teach many subjects
-  subjectsTaught Subject[]
+  assignments TeacherAssignment[]
 }
 
 // NEW: Model to store teacher payment information.
@@ -163,8 +167,10 @@ model Program {
   // Students are enrolled in a program through the Enrollment model
   enrollments  Enrollment[]
   applications Application[]
+  teacherAssignments TeacherAssignment[]
+  grades       Grade[]
+  reports      Report[]
 
-  // Pricing for the program
   pricing Pricing?
 }
 
@@ -175,11 +181,10 @@ model Subject {
   id               String          @id @default(uuid())
   name             String          @unique
   description      String?
-  // removed courses field
   programs         Program[]       @relation("ProgramToSubject")
-  teacherProfile   TeacherProfile? @relation(fields: [teacherProfileId], references: [id])
-  teacherProfileId String?
   exams            Exam[]
+  assignments      TeacherAssignment[]
+  grades           Grade[]
 }
 
 // Represents a student's enrollment in a specific program
@@ -197,6 +202,61 @@ model Enrollment {
   updatedAt DateTime @updatedAt
 
   @@unique([studentId, programId])
+}
+
+model TeacherAssignment {
+  id        String @id @default(uuid())
+  
+  teacherProfileId String
+  teacherProfile   TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([teacherProfileId, subjectId, programId])
+}
+
+// ---------------------------------------------------------------- //
+// Grading System
+// ---------------------------------------------------------------- //
+
+model Grade {
+  id        String @id @default(uuid())
+  
+  studentId String
+  student   User   @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
+  
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  teacherId String?
+  teacher   User?   @relation("TeacherGrades", fields: [teacherId], references: [id])
+  
+  term      TermType
+  
+  // Grade components
+  continuousAssessment Float? // CA score (0-40)
+  examination         Float? // Exam score (0-60)
+  totalScore          Float? // Total score (0-100)
+  grade               String? // A, B, C, D, F
+  
+  // Metadata
+  gradedBy    String // User ID of who graded (teacher or admin)
+  gradedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Comments
+  teacherComment String?
+  
+  @@unique([studentId, subjectId, programId, term])
 }
 
 // ---------------------------------------------------------------- //
@@ -252,6 +312,8 @@ model Exam {
   createdBy   User       @relation("TeacherExams", fields: [createdById], references: [id])
   createdById String
   term        TermType   @default(FIRST)
+  examType    ExamType   @default(EXAM) // CA or EXAM
+  duration    Int        @default(60) // Duration in minutes
   questions   Question[]
   attempts    Attempt[]
 
@@ -270,9 +332,11 @@ model Question {
   id      String           @id @default(uuid())
   text    String
   type    QuestionType
+  marks   Float            @default(1) // Marks for this question
   exam    Exam             @relation(fields: [examId], references: [id])
   examId  String
   options QuestionOption[]
+  grades  QuestionGrade[]
 }
 
 model QuestionOption {
@@ -284,12 +348,38 @@ model QuestionOption {
 }
 
 model Attempt {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  exam   Exam   @relation(fields: [examId], references: [id])
-  examId String
-  score  Int?
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+  exam            Exam     @relation(fields: [examId], references: [id])
+  examId          String
+  score           Int?
+  answers         Json?    // Store student answers
+  tabSwitches     Int      @default(0) // Track tab switches
+  startedAt       DateTime @default(now())
+  submittedAt     DateTime?
+  flaggedForReview Boolean @default(false)
+  
+  // Question-level grading
+  questionGrades  QuestionGrade[]
+}
+
+model QuestionGrade {
+  id         String  @id @default(uuid())
+  attemptId  String
+  attempt    Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  
+  studentAnswer String? // Student's answer
+  marksAwarded  Float   // Marks given by teacher
+  maxMarks      Float   // Maximum possible marks for this question
+  teacherComment String? // Teacher's feedback
+  
+  gradedBy   String   // Teacher/Admin ID
+  gradedAt   DateTime @default(now())
+  
+  @@unique([attemptId, questionId])
 }
 
 // ---------------------------------------------------------------- //
@@ -340,6 +430,35 @@ model Pricing {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  studentId String
+  student   User     @relation("StudentReports", fields: [studentId], references: [id])
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+  term      TermType
+  
+  totalSubjects    Int
+  totalScore       Float
+  averageScore     Float
+  position         Int?
+  grade            String?
+  
+  attendanceRate   Float?
+  conductGrade     String?
+  teacherRemarks   String?
+  principalRemarks String?
+  
+  termStartDate    DateTime?
+  termEndDate      DateTime?
+  nextTermDate     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([studentId, programId, term])
 }
 
 // ---------------------------------------------------------------- //
@@ -396,4 +515,9 @@ enum JobType {
   PART_TIME
   CONTRACT
   INTERNSHIP
+}
+
+enum ExamType {
+  CA
+  EXAM
 }

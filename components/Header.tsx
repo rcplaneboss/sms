@@ -38,7 +38,7 @@ const Header = () => {
   const hiddenItems = items.slice(5);
 
   return (
-    <main className="flex flex-col w-full sticky top-0 z-50 overflow-x-hidden">
+    <main className="flex flex-col w-full sticky top-0 z-50 ">
       {/* Dark mode toggle bar */}
       <DarkModeToggle />
       <div className="bg-p1-hex px-30 w-screen flex font-mono text-t-light h-10 max-md:px-8">
@@ -68,8 +68,8 @@ const Header = () => {
       </div>
 
       {/* Main Nav */}
-      <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center max-md:justify-between items-center dark:bg-black">
-        <div className="flex justify-between w-full items-center">
+      <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center max-md:justify-between items-center dark:bg-black overflow-x-hidden overflow-y-visible z-50">
+        <div className="flex justify-between w-full items-center ">
           {/* Logo */}
           <div>
             <h1 className="text-2xl font-bold font-sans">Al-Itqan</h1>
@@ -79,7 +79,7 @@ const Header = () => {
           <div className="font-mono text-t-dark dark:text-t-light text-sm max-md:hidden flex items-center gap-4">
             <RoleNav items={visibleItems} />
             {hiddenItems.length > 0 && (
-              <div className="relative">
+              <div className="relative z-50">
                 <Button
                   onClick={() => setShowMore(!showMore)}
                   variant="ghost"

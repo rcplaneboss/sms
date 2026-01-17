@@ -5,7 +5,6 @@ import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/LinkAsButton";
 import { ArrowRight, Users, BookOpen, CheckCircle, Trash2, Loader2, ListOrdered } from "lucide-react";
 
-// Placeholder types for data received from the API
 interface Teacher {
     id: string;
     name: string | null;
@@ -13,50 +12,55 @@ interface Teacher {
 }
 
 interface Program {
-    name: string;
-    level: { name: string };
-}
-
-interface Course {
     id: string;
     name: string;
-    subject: { name: string };
+    level: { name: string };
+    track: { name: string };
+}
+
+interface Subject {
+    id: string;
+    name: string;
+    description?: string;
     programs: Program[];
 }
 
-// Type for the data returned by the API's GET request (currentAssignments)
 interface CurrentAssignment {
     user: {
         id: string;
         name: string | null;
         email: string;
     };
-    coursesTaught: {
-        id: string;
-        name: string;
-        subject: { name: string };
+    assignments: {
+        subject: {
+            id: string;
+            name: string;
+            description?: string;
+        };
+        program: {
+            id: string;
+            name: string;
+        };
     }[];
 }
 
-
 const AdminAssignmentPage = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [programs, setPrograms] = useState<Program[]>([]);
     const [currentAssignments, setCurrentAssignments] = useState<CurrentAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAssigning, setIsAssigning] = useState(false);
-    // Tracks which assignment is currently being deleted to disable its button
     const [deletingAssignment, setDeletingAssignment] = useState<string | null>(null);
     
-    // State for user selections
     const [selectedTeacherId, setSelectedTeacherId] = useState("");
-    const [selectedCourseId, setSelectedCourseId] = useState("");
+    const [selectedSubjectId, setSelectedSubjectId] = useState("");
+    const [selectedProgramId, setSelectedProgramId] = useState("");
 
-    // State for selected objects for display (improves UX)
     const selectedTeacher = teachers.find(t => t.id === selectedTeacherId);
-    const selectedCourse = courses.find(c => c.id === selectedCourseId);
+    const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
+    const selectedProgram = programs.find(p => p.id === selectedProgramId);
 
-    // 1. Data Fetching (Reusable function to reload data)
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -65,16 +69,17 @@ const AdminAssignmentPage = () => {
             const data = await res.json();
             
             setTeachers(data.teachers || []);
-            setCourses(data.courses || []);
+            setSubjects(data.subjects || []);
+            setPrograms(data.programs || []);
             setCurrentAssignments(data.currentAssignments || []);
             
-            // Set defaults if data exists
             if (data.teachers.length > 0) setSelectedTeacherId(data.teachers[0].id);
-            if (data.courses.length > 0) setSelectedCourseId(data.courses[0].id);
+            if (data.subjects.length > 0) setSelectedSubjectId(data.subjects[0].id);
+            if (data.programs.length > 0) setSelectedProgramId(data.programs[0].id);
 
         } catch (error) {
-            console.error("Error fetching data:", error);
-            toast.error("Failed to load teachers, courses, or current assignments.");
+            console.error("Error fetching assignment data:", error);
+            toast.error("Failed to load teachers, subjects, or current assignments.");
         } finally {
             setLoading(false);
         }
@@ -84,15 +89,14 @@ const AdminAssignmentPage = () => {
         fetchData();
     }, []);
 
-    // 2. Assignment Creation Logic (POST)
     const handleAssignment = async () => {
-        if (!selectedTeacherId || !selectedCourseId) {
-            toast.warning("Please select both a Teacher and a Course.");
+        if (!selectedTeacherId || !selectedSubjectId || !selectedProgramId) {
+            toast.warning("Please select a Teacher, Subject, and Program.");
             return;
         }
 
         setIsAssigning(true);
-        const toastId = toast.loading("Assigning course...");
+        const toastId = toast.loading("Assigning subject...");
 
         try {
             const res = await fetch("/api/admin-assign", {
@@ -100,32 +104,31 @@ const AdminAssignmentPage = () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     teacherId: selectedTeacherId,
-                    courseId: selectedCourseId,
+                    subjectId: selectedSubjectId,
+                    programId: selectedProgramId,
                 }),
             });
 
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || "Failed to assign course.");
+                throw new Error(errorData.message || "Failed to assign subject.");
             }
 
-            await fetchData(); // Refresh data after successful assignment
-            toast.success("Course assigned successfully!", { id: toastId });
+            await fetchData();
+            toast.success("Subject assigned successfully!", { id: toastId });
 
         } catch (error) {
             console.error("Assignment Error:", error);
-            toast.error(error.message || "Failed to assign course.", { id: toastId });
+            toast.error(error.message || "Failed to assign subject.", { id: toastId });
         } finally {
             setIsAssigning(false);
         }
     };
 
-    // 3. Assignment Deletion Logic (DELETE)
-    const handleDeleteAssignment = async (teacherId: string, courseId: string) => {
-        // Unique key for tracking the deletion state
-        const assignmentKey = `${teacherId}-${courseId}`;
+    const handleDeleteAssignment = async (teacherId: string, subjectId: string) => {
+        const assignmentKey = `${teacherId}-${subjectId}`;
         setDeletingAssignment(assignmentKey);
-        const toastId = toast.loading("Unassigning course...");
+        const toastId = toast.loading("Unassigning subject...");
 
         try {
             const res = await fetch("/api/admin-assign", {
@@ -133,28 +136,26 @@ const AdminAssignmentPage = () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     teacherId,
-                    courseId,
+                    subjectId,
                 }),
             });
 
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || "Failed to unassign course.");
+                throw new Error(errorData.message || "Failed to unassign subject.");
             }
 
-            await fetchData(); // Refresh data after successful unassignment
-            toast.success("Course unassigned successfully!", { id: toastId });
+            await fetchData();
+            toast.success("Subject unassigned successfully!", { id: toastId });
 
         } catch (error) {
             console.error("Unassignment Error:", error);
-            toast.error(error.message || "Failed to unassign course.", { id: toastId });
+            toast.error(error.message || "Failed to unassign subject.", { id: toastId });
         } finally {
             setDeletingAssignment(null);
         }
     };
 
-
-    // 4. Loading State Renderer
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
@@ -166,8 +167,7 @@ const AdminAssignmentPage = () => {
         );
     }
     
-    // 5. No Data State (Only shows if no teachers OR no courses exist)
-    if (teachers.length === 0 || courses.length === 0) {
+    if (teachers.length === 0 || subjects.length === 0) {
         return (
             <div className="min-h-screen p-8 bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl text-center max-w-lg">
@@ -176,10 +176,10 @@ const AdminAssignmentPage = () => {
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">
                         {teachers.length === 0 && (
-                            <span>No onboarded teachers found. Teachers must complete the acceptance page before being assigned courses.</span>
+                            <span>No onboarded teachers found. Teachers must complete the acceptance page before being assigned subjects.</span>
                         )}
-                        {courses.length === 0 && teachers.length > 0 && (
-                            <span>No courses are currently available in the database to assign. Please add courses.</span>
+                        {subjects.length === 0 && teachers.length > 0 && (
+                            <span>No subjects are currently available in the database to assign. Please add subjects.</span>
                         )}
                     </p>
                 </div>
@@ -187,28 +187,25 @@ const AdminAssignmentPage = () => {
         );
     }
 
-    // 6. Main Component Rendering
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-8 transition-colors duration-300">
             <Toaster />
             <div className="max-w-7xl mx-auto">
                 <header className="py-6 mb-8 text-center border-b dark:border-gray-800">
                     <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">
-                        Course Assignment Center
+                        Subject Assignment Center
                     </h1>
                     <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-                        Link teachers to courses and manage existing assignments.
+                        Link teachers to subjects and manage existing assignments.
                     </p>
                 </header>
 
-                {/* ASSIGNMENT CREATION FORM */}
                 <section className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl mb-12">
                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                         <ArrowRight className="w-5 h-5 mr-3 text-indigo-500" />
                         Create New Assignment
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Teacher Selection */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label htmlFor="teacher-select" className="block text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
                                 Select Teacher
@@ -227,61 +224,73 @@ const AdminAssignmentPage = () => {
                             </select>
                         </div>
 
-                        {/* Course Selection */}
                         <div>
-                            <label htmlFor="course-select" className="block text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                                Select Course
+                            <label htmlFor="subject-select" className="block text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                Select Subject
                             </label>
                             <select
-                                id="course-select"
-                                value={selectedCourseId}
-                                onChange={(e) => setSelectedCourseId(e.target.value)}
+                                id="subject-select"
+                                value={selectedSubjectId}
+                                onChange={(e) => setSelectedSubjectId(e.target.value)}
                                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors duration-300"
                             >
-                                {courses.map((course) => {
-                                    const programInfo = course.programs[0];
-                                    const details = programInfo 
-                                        ? ` (${programInfo.level.name} - ${programInfo.name})`
-                                        : '';
-                                    return (
-                                        <option key={course.id} value={course.id}>
-                                            {course.name} - {course.subject.name}{details}
-                                        </option>
-                                    );
-                                })}
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label htmlFor="program-select" className="block text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                Select Program
+                            </label>
+                            <select
+                                id="program-select"
+                                value={selectedProgramId}
+                                onChange={(e) => setSelectedProgramId(e.target.value)}
+                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors duration-300"
+                            >
+                                {programs.map((program) => (
+                                    <option key={program.id} value={program.id}>
+                                        {program.name} ({program.level.name} - {program.track.name})
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
                     
-                    {/* ASSIGNMENT PREVIEW */}
                     <div className="p-4 sm:p-6 mt-6 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700">
                         <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100 flex items-center">
                             Assignment Preview
                         </h3>
-                        {selectedTeacher && selectedCourse ? (
+                        {selectedTeacher && selectedSubject && selectedProgram ? (
                             <div className="text-lg text-gray-700 dark:text-gray-200">
                                 <p className="mb-2">
                                     <span className="font-semibold text-indigo-500">Teacher:</span> {selectedTeacher.name || selectedTeacher.email}
                                 </p>
+                                <p className="mb-2">
+                                    <span className="font-semibold text-green-500">Subject:</span> {selectedSubject.name}
+                                </p>
                                 <p>
-                                    <span className="font-semibold text-green-500">Course:</span> {selectedCourse.name} - {selectedCourse.subject.name}
+                                    <span className="font-semibold text-purple-500">Program:</span> {selectedProgram.name} ({selectedProgram.level.name} - {selectedProgram.track.name})
                                 </p>
                             </div>
                         ) : (
                             <p className="text-gray-500 dark:text-gray-400 italic">
-                                Select a teacher and a course to see the assignment preview.
+                                Select a teacher, subject, and program to see the assignment preview.
                             </p>
                         )}
                     </div>
 
-                    {/* SUBMIT BUTTON */}
                     <div className="pt-6">
                         <Button
                             onClick={handleAssignment}
                             variant="primary"
                             size="lg"
                             withIcon={true}
-                            disabled={isAssigning || !selectedTeacherId || !selectedCourseId}
+                            disabled={isAssigning || !selectedTeacherId || !selectedSubjectId || !selectedProgramId}
                             className="w-full text-lg"
                         >
                             {isAssigning ? 
@@ -292,16 +301,15 @@ const AdminAssignmentPage = () => {
                     </div>
                 </section>
                 
-                {/* CURRENT ASSIGNMENTS MANAGEMENT DASHBOARD */}
                 <section>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                         <ListOrdered className="w-5 h-5 mr-3 text-yellow-500" />
-                        Current Assignments ({currentAssignments.reduce((acc, a) => acc + a.coursesTaught.length, 0)})
+                        Current Assignments ({currentAssignments.reduce((acc, a) => acc + a.assignments.length, 0)})
                     </h2>
                     
                     {currentAssignments.length === 0 ? (
                         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl text-center shadow-lg">
-                            <p className="text-gray-600 dark:text-gray-400">No courses are currently assigned to any teacher.</p>
+                            <p className="text-gray-600 dark:text-gray-400">No subjects are currently assigned to any teacher.</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -314,16 +322,21 @@ const AdminAssignmentPage = () => {
                                         Teacher: {assignment.user.name || assignment.user.email}
                                     </h3>
                                     <ul className="space-y-2">
-                                        {assignment.coursesTaught.map(course => {
-                                            const assignmentKey = `${assignment.user.id}-${course.id}`;
+                                        {assignment.assignments.map(assign => {
+                                            const assignmentKey = `${assignment.user.id}-${assign.subject.id}`;
                                             const isDeleting = deletingAssignment === assignmentKey;
                                             return (
-                                                <li key={course.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                                                    <span className="text-gray-700 dark:text-gray-200 mb-2 sm:mb-0">
-                                                        {course.name} <span className="text-sm font-medium text-gray-500 dark:text-gray-400">({course.subject.name})</span>
-                                                    </span>
+                                                <li key={`${assign.subject.id}-${assign.program.id}`} className="flex flex-col sm:flex-row justify-between sm:items-center bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                                                    <div className="mb-2 sm:mb-0">
+                                                        <span className="text-gray-700 dark:text-gray-200 font-medium">
+                                                            {assign.subject.name}
+                                                        </span>
+                                                        <span className="text-sm text-gray-500 dark:text-gray-400 block">
+                                                            Program: {assign.program.name}
+                                                        </span>
+                                                    </div>
                                                     <Button
-                                                        onClick={() => handleDeleteAssignment(assignment.user.id, course.id)}
+                                                        onClick={() => handleDeleteAssignment(assignment.user.id, assign.subject.id)}
                                                         variant="destructive"
                                                         size="sm"
                                                         withIcon={true}

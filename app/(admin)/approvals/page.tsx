@@ -54,13 +54,13 @@ const AdminApplicationsPage = () => {
     try {
       let res;
       if (actionType === "interview") {
-        res = await fetch("/api/applications/schedule-interview", {
+        res = await fetch("/api/applications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: currentApplication.id, message }),
         });
       } else if (actionType === "approve" || actionType === "reject") {
-        res = await fetch(`/api/applications/${currentApplication.id}`, {
+        res = await fetch(`/api/applications?id=${currentApplication.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -89,13 +89,19 @@ const AdminApplicationsPage = () => {
   ) => {
     setCurrentApplication(app);
     setActionType(type);
+    const isTeacher = app.vacancy !== null;
+    
     if (type === "interview") {
       setMessage(
-        "Hello [Teacher's Name],\n\nThank you for your application. We would like to schedule an interview with you. Please reply to this email to coordinate a time that works for you. If you have any questions, you can reach us on WhatsApp at [Your WhatsApp Number].\n\nBest regards,\nThe Team"
+        isTeacher
+          ? "Hello [Teacher's Name],\n\nThank you for your application. We would like to schedule an interview with you. Please reply to this email to coordinate a time that works for you. If you have any questions, you can reach us on WhatsApp at [Your WhatsApp Number].\n\nBest regards,\nThe Team"
+          : "Hello [Student's Name],\n\nThank you for your application. We would like to schedule an interview with you. Please reply to this email to coordinate a time that works for you.\n\nBest regards,\nThe Team"
       );
     } else if (type === "approve") {
       setMessage(
-        "Congratulations! Your application has been approved. Please log in to view the terms and conditions."
+        isTeacher
+          ? "Congratulations! Your application has been approved. Please log in to view the terms and conditions."
+          : "Congratulations! Your application has been approved. You can now proceed with enrollment."
       );
     } else if (type === "reject") {
       setMessage(

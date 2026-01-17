@@ -28,7 +28,7 @@ export async function GET(
         createdBy: { select: { name: true, id: true } },
         attempts: {
           where: { userId: session.user.id },
-          select: { id: true, score: true, createdAt: true }
+          select: { id: true, score: true }
         }
       }
     });
@@ -76,7 +76,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { title } = await req.json();
+    const { title, duration } = await req.json();
 
     if (!title || title.trim() === '') {
       return NextResponse.json(
@@ -87,7 +87,10 @@ export async function PUT(
 
     const updatedExam = await prisma.exam.update({
       where: { id },
-      data: { title: title.trim() },
+      data: { 
+        title: title.trim(),
+        ...(duration && { duration: parseInt(duration) })
+      },
       include: {
         questions: true,
         createdBy: { select: { name: true } }
