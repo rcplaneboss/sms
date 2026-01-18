@@ -99,12 +99,9 @@ export default function UserManagementPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // useEffect(() => {
-  //   if (session?.user?.role !== "ADMIN") {
-  //     redirect("/access-denied");
-  //   }
-  //   fetchData();
-  // }, [session]);
+ 
+
+ 
 
   const fetchData = async () => {
     try {
