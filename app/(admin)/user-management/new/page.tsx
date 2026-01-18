@@ -1,28 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { redirect, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ArrowLeft,
-  Save,
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  Shield,
-  GraduationCap,
-  BookOpen,
-  Loader2,
-  UserPlus,
-  AlertCircle,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft, User, Mail, Lock, Shield, GraduationCap, BookOpen,
+  Phone, MapPin, Calendar, Users, CheckCircle, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,98 +23,124 @@ interface UserForm {
   password: string;
   role: "STUDENT" | "TEACHER" | "ADMIN";
   
-  // Student Profile
-  studentProfile?: {
-    fullName: string;
-    dateOfBirth: string;
-    age: string;
-    gender: string;
-    phoneNumber: string;
-    address: string;
-    guardianName?: string;
-    guardianContact?: string;
-    previousEducation?: string;
-  };
+  // Profile Info
+  fullName: string;
+  phoneNumber: string;
+  address: string;
+  dateOfBirth: string;
+  age: string;
+  gender: string;
   
-  // Teacher Profile
-  teacherProfile?: {
-    fullName: string;
-    phoneNumber: string;
-    address?: string;
-    highestDegree?: string;
-    experienceYears?: number;
-    bio?: string;
-    equipment?: string;
-  };
+  // Student Specific
+  guardianName?: string;
+  guardianContact?: string;
+  previousEducation?: string;
+  
+  // Teacher Specific
+  highestDegree?: string;
+  experienceYears?: number;
+  bio?: string;
+  equipment?: string;
 }
 
 export default function NewUserPage() {
-  const router = useRouter();
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("basic");
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect("/login");
+    },
+  });
   
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<UserForm>({
     name: "",
     email: "",
     password: "",
     role: "STUDENT",
+    fullName: "",
+    phoneNumber: "",
+    address: "",
+    dateOfBirth: "",
+    age: "",
+    gender: "Not specified",
+    guardianName: "",
+    guardianContact: "",
+    previousEducation: "",
+    highestDegree: "",
+    experienceYears: 0,
+    bio: "",
+    equipment: ""
   });
 
-  const handleRoleChange = (role: "STUDENT" | "TEACHER" | "ADMIN") => {
-    setForm(prev => ({
-      ...prev,
-      role,
-      studentProfile: role === "STUDENT" ? {
-        fullName: "",
-        dateOfBirth: "",
-        age: "",
-        gender: "",
-        phoneNumber: "",
-        address: "",
-        guardianName: "",
-        guardianContact: "",
-        previousEducation: "",
-      } : undefined,
-      teacherProfile: role === "TEACHER" ? {
-        fullName: "",
-        phoneNumber: "",
-        address: "",
-        highestDegree: "",
-        experienceYears: 0,
-        bio: "",
-        equipment: "",
-      } : undefined,
-    }));
+  if (session?.user?.role !== "ADMIN") {
+    redirect("/access-denied");
+  }
+
+  const updateForm = (field: keyof UserForm, value: string | number) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const nextStep = () => {
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const validateStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return form.name && form.email && form.password && form.role;
+      case 2:
+        return form.fullName && form.phoneNumber;
+      case 3:
+        return true; // Optional fields
+      default:
+        return false;
+    }
   };
 
   const handleSubmit = async () => {
-    // Basic validation
-    if (!form.name || !form.email || !form.password) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (form.role === "STUDENT" && form.studentProfile) {
-      if (!form.studentProfile.fullName || !form.studentProfile.phoneNumber) {
-        toast.error("Please fill in student profile information");
-        return;
-      }
-    }
-
-    if (form.role === "TEACHER" && form.teacherProfile) {
-      if (!form.teacherProfile.fullName || !form.teacherProfile.phoneNumber) {
-        toast.error("Please fill in teacher profile information");
-        return;
-      }
-    }
-
     setLoading(true);
     try {
+      const payload = {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        ...(form.role === "STUDENT" && {
+          studentProfile: {
+            fullName: form.fullName,
+            phoneNumber: form.phoneNumber,
+            dateOfBirth: form.dateOfBirth || new Date().toISOString(),
+            age: form.age || "0",
+            gender: form.gender,
+            address: form.address,
+            guardianName: form.guardianName,
+            guardianContact: form.guardianContact,
+            previousEducation: form.previousEducation
+          }
+        }),
+        ...(form.role === "TEACHER" && {
+          teacherProfile: {
+            fullName: form.fullName,
+            phoneNumber: form.phoneNumber,
+            address: form.address,
+            highestDegree: form.highestDegree,
+            experienceYears: form.experienceYears || 0,
+            bio: form.bio,
+            equipment: form.equipment
+          }
+        })
+      };
+
       const response = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -141,94 +157,122 @@ export default function NewUserPage() {
     }
   };
 
-  if (session?.user?.role !== "ADMIN") {
-    router.push("/access-denied");
-    return null;
-  }
-
   const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "ADMIN":
-        return <Shield className="h-4 w-4" />;
-      case "TEACHER":
-        return <GraduationCap className="h-4 w-4" />;
-      case "STUDENT":
-        return <BookOpen className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
-    }
+    const icons = {
+      ADMIN: Shield,
+      TEACHER: GraduationCap,
+      STUDENT: BookOpen
+    };
+    const Icon = icons[role as keyof typeof icons] || Users;
+    return <Icon className="h-5 w-5" />;
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 md:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/user-management")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/user-management")}
+            className="gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <UserPlus className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              Add New User
-            </h1>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Create a new user account with profile information
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create New User</h1>
+            <p className="text-slate-600 dark:text-slate-400">
+              Add a new user to the system with complete profile information
             </p>
           </div>
         </div>
 
-        {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="profile" disabled={form.role === "ADMIN"}>
-                  Profile Details
-                </TabsTrigger>
-                <TabsTrigger value="review">Review</TabsTrigger>
-              </TabsList>
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center space-x-8">
+          {[1, 2, 3].map((step) => (
+            <div key={step} className="flex items-center">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                currentStep >= step 
+                  ? "bg-blue-600 border-blue-600 text-white" 
+                  : "border-slate-300 text-slate-400"
+              }`}>
+                {currentStep > step ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <span className="text-sm font-semibold">{step}</span>
+                )}
+              </div>
+              <div className="ml-3 text-sm">
+                <p className={`font-medium ${currentStep >= step ? "text-blue-600" : "text-slate-400"}`}>
+                  {step === 1 && "Basic Info"}
+                  {step === 2 && "Profile Details"}
+                  {step === 3 && "Additional Info"}
+                </p>
+              </div>
+              {step < 3 && (
+                <div className={`w-16 h-0.5 ml-8 ${
+                  currentStep > step ? "bg-blue-600" : "bg-slate-300"
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
 
-              <TabsContent value="basic" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Form Card */}
+        <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-600" />
+              {currentStep === 1 && "Basic Information"}
+              {currentStep === 2 && "Profile Details"}
+              {currentStep === 3 && "Additional Information"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Step 1: Basic Info */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Name *</Label>
+                    <Label htmlFor="name">Display Name</Label>
                     <Input
                       id="name"
                       value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Enter full name"
+                      onChange={(e) => updateForm("name", e.target.value)}
+                      placeholder="Enter display name"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) => updateForm("email", e.target.value)}
                       placeholder="Enter email address"
+                      className="mt-1"
                     />
                   </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="password">Password *</Label>
+                    <Label htmlFor="password">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      onChange={(e) => updateForm("password", e.target.value)}
                       placeholder="Enter password"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="role">Role *</Label>
-                    <Select value={form.role} onValueChange={handleRoleChange}>
-                      <SelectTrigger>
+                    <Label htmlFor="role">User Role</Label>
+                    <Select value={form.role} onValueChange={(value) => updateForm("role", value)}>
+                      <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -255,348 +299,237 @@ export default function NewUserPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={() => setActiveTab("profile")} 
-                    disabled={form.role === "ADMIN"}
-                  >
-                    Next: Profile Details
-                  </Button>
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    {getRoleIcon(form.role)}
+                    <span className="font-medium text-blue-900 dark:text-blue-100">
+                      {form.role} Account
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    {form.role === "STUDENT" && "Students can enroll in programs, take exams, and view their results."}
+                    {form.role === "TEACHER" && "Teachers can create exams, grade submissions, and manage their courses."}
+                    {form.role === "ADMIN" && "Admins have full access to manage users, programs, and system settings."}
+                  </p>
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="profile" className="space-y-6">
-                {form.role === "STUDENT" && form.studentProfile && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <BookOpen className="h-5 w-5 text-green-600" />
-                      <h3 className="text-lg font-semibold">Student Profile</h3>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Step 2: Profile Details */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      value={form.fullName}
+                      onChange={(e) => updateForm("fullName", e.target.value)}
+                      placeholder="Enter full name"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={form.phoneNumber}
+                      onChange={(e) => updateForm("phoneNumber", e.target.value)}
+                      placeholder="Enter phone number"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={form.address}
+                    onChange={(e) => updateForm("address", e.target.value)}
+                    placeholder="Enter address"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={form.dateOfBirth}
+                      onChange={(e) => updateForm("dateOfBirth", e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={form.age}
+                      onChange={(e) => updateForm("age", e.target.value)}
+                      placeholder="Enter age"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={form.gender} onValueChange={(value) => updateForm("gender", value)}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Not specified">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Additional Info */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                {form.role === "STUDENT" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="student-fullName">Full Name *</Label>
+                        <Label htmlFor="guardianName">Guardian Name (Optional)</Label>
                         <Input
-                          id="student-fullName"
-                          value={form.studentProfile.fullName}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, fullName: e.target.value }
-                          })}
-                          placeholder="Enter full name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="student-phone">Phone Number *</Label>
-                        <Input
-                          id="student-phone"
-                          value={form.studentProfile.phoneNumber}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, phoneNumber: e.target.value }
-                          })}
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="student-dob">Date of Birth</Label>
-                        <Input
-                          id="student-dob"
-                          type="date"
-                          value={form.studentProfile.dateOfBirth}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, dateOfBirth: e.target.value }
-                          })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="student-age">Age</Label>
-                        <Input
-                          id="student-age"
-                          value={form.studentProfile.age}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, age: e.target.value }
-                          })}
-                          placeholder="Enter age"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="student-gender">Gender</Label>
-                        <Select 
-                          value={form.studentProfile.gender} 
-                          onValueChange={(value) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, gender: value }
-                          })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="student-guardian">Guardian Name</Label>
-                        <Input
-                          id="student-guardian"
-                          value={form.studentProfile.guardianName}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, guardianName: e.target.value }
-                          })}
+                          id="guardianName"
+                          value={form.guardianName}
+                          onChange={(e) => updateForm("guardianName", e.target.value)}
                           placeholder="Enter guardian name"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label htmlFor="student-address">Address</Label>
-                        <Textarea
-                          id="student-address"
-                          value={form.studentProfile.address}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, address: e.target.value }
-                          })}
-                          placeholder="Enter address"
-                          rows={3}
+                          className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="student-guardian-contact">Guardian Contact</Label>
+                        <Label htmlFor="guardianContact">Guardian Contact (Optional)</Label>
                         <Input
-                          id="student-guardian-contact"
-                          value={form.studentProfile.guardianContact}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, guardianContact: e.target.value }
-                          })}
+                          id="guardianContact"
+                          value={form.guardianContact}
+                          onChange={(e) => updateForm("guardianContact", e.target.value)}
                           placeholder="Enter guardian contact"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="student-education">Previous Education</Label>
-                        <Input
-                          id="student-education"
-                          value={form.studentProfile.previousEducation}
-                          onChange={(e) => setForm({
-                            ...form,
-                            studentProfile: { ...form.studentProfile!, previousEducation: e.target.value }
-                          })}
-                          placeholder="Enter previous education"
+                          className="mt-1"
                         />
                       </div>
                     </div>
-                  </div>
+                    <div>
+                      <Label htmlFor="previousEducation">Previous Education (Optional)</Label>
+                      <Input
+                        id="previousEducation"
+                        value={form.previousEducation}
+                        onChange={(e) => updateForm("previousEducation", e.target.value)}
+                        placeholder="Enter previous education details"
+                        className="mt-1"
+                      />
+                    </div>
+                  </>
                 )}
 
-                {form.role === "TEACHER" && form.teacherProfile && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <GraduationCap className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold">Teacher Profile</h3>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {form.role === "TEACHER" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="teacher-fullName">Full Name *</Label>
+                        <Label htmlFor="highestDegree">Highest Degree</Label>
                         <Input
-                          id="teacher-fullName"
-                          value={form.teacherProfile.fullName}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, fullName: e.target.value }
-                          })}
-                          placeholder="Enter full name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="teacher-phone">Phone Number *</Label>
-                        <Input
-                          id="teacher-phone"
-                          value={form.teacherProfile.phoneNumber}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, phoneNumber: e.target.value }
-                          })}
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="teacher-degree">Highest Degree</Label>
-                        <Input
-                          id="teacher-degree"
-                          value={form.teacherProfile.highestDegree}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, highestDegree: e.target.value }
-                          })}
+                          id="highestDegree"
+                          value={form.highestDegree}
+                          onChange={(e) => updateForm("highestDegree", e.target.value)}
                           placeholder="Enter highest degree"
+                          className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="teacher-experience">Years of Experience</Label>
+                        <Label htmlFor="experienceYears">Years of Experience</Label>
                         <Input
-                          id="teacher-experience"
+                          id="experienceYears"
                           type="number"
-                          value={form.teacherProfile.experienceYears}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, experienceYears: parseInt(e.target.value) || 0 }
-                          })}
+                          value={form.experienceYears}
+                          onChange={(e) => updateForm("experienceYears", parseInt(e.target.value) || 0)}
                           placeholder="Enter years of experience"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label htmlFor="teacher-address">Address</Label>
-                        <Textarea
-                          id="teacher-address"
-                          value={form.teacherProfile.address}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, address: e.target.value }
-                          })}
-                          placeholder="Enter address"
-                          rows={3}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label htmlFor="teacher-bio">Bio</Label>
-                        <Textarea
-                          id="teacher-bio"
-                          value={form.teacherProfile.bio}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, bio: e.target.value }
-                          })}
-                          placeholder="Enter bio"
-                          rows={4}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label htmlFor="teacher-equipment">Equipment</Label>
-                        <Textarea
-                          id="teacher-equipment"
-                          value={form.teacherProfile.equipment}
-                          onChange={(e) => setForm({
-                            ...form,
-                            teacherProfile: { ...form.teacherProfile!, equipment: e.target.value }
-                          })}
-                          placeholder="Enter equipment details"
-                          rows={3}
+                          className="mt-1"
                         />
                       </div>
                     </div>
-                  </div>
+                    <div>
+                      <Label htmlFor="bio">Bio (Optional)</Label>
+                      <Input
+                        id="bio"
+                        value={form.bio}
+                        onChange={(e) => updateForm("bio", e.target.value)}
+                        placeholder="Enter bio"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="equipment">Equipment (Optional)</Label>
+                      <Input
+                        id="equipment"
+                        value={form.equipment}
+                        onChange={(e) => updateForm("equipment", e.target.value)}
+                        placeholder="Enter equipment details"
+                        className="mt-1"
+                      />
+                    </div>
+                  </>
                 )}
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setActiveTab("basic")}>
-                    Previous: Basic Info
+                {form.role === "ADMIN" && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-5 w-5 text-amber-600" />
+                      <span className="font-medium text-amber-900 dark:text-amber-100">
+                        Admin Account
+                      </span>
+                    </div>
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      This user will have full administrative privileges. Please ensure this is intended.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              
+              <div className="flex gap-2">
+                {currentStep < 3 ? (
+                  <Button
+                    onClick={nextStep}
+                    disabled={!validateStep(currentStep)}
+                    className="gap-2"
+                  >
+                    Next
+                    <ArrowLeft className="h-4 w-4 rotate-180" />
                   </Button>
-                  <Button onClick={() => setActiveTab("review")}>
-                    Next: Review
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="review" className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <h3 className="text-lg font-semibold">Review Information</h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Basic Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Name</Label>
-                        <p className="text-slate-900 dark:text-white font-medium">{form.name}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Email</Label>
-                        <p className="text-slate-900 dark:text-white font-medium">{form.email}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Role</Label>
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(form.role)}
-                          <span className="text-slate-900 dark:text-white font-medium">{form.role}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {form.role !== "ADMIN" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          {form.role === "STUDENT" ? <BookOpen className="h-5 w-5" /> : <GraduationCap className="h-5 w-5" />}
-                          Profile Information
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {form.role === "STUDENT" && form.studentProfile && (
-                          <>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Full Name</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">{form.studentProfile.fullName}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Phone</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">{form.studentProfile.phoneNumber}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Gender</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">{form.studentProfile.gender || "Not specified"}</p>
-                            </div>
-                          </>
-                        )}
-                        {form.role === "TEACHER" && form.teacherProfile && (
-                          <>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Full Name</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">{form.teacherProfile.fullName}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Phone</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">{form.teacherProfile.phoneNumber}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Experience</Label>
-                              <p className="text-slate-900 dark:text-white font-medium">
-                                {form.teacherProfile.experienceYears ? `${form.teacherProfile.experienceYears} years` : "Not specified"}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setActiveTab(form.role === "ADMIN" ? "basic" : "profile")}>
-                    Previous
-                  </Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="gap-2">
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={loading || !validateStep(currentStep)}
+                    className="gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                  >
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <Save className="h-4 w-4" />
                     Create User
                   </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
