@@ -51,14 +51,12 @@ interface UserDetails {
   attempts?: Array<{
     exam: {
       title: string;
-      createdAt: string;
     };
     score?: number;
     startedAt: string;
   }>;
   exams?: Array<{
     title: string;
-    createdAt: string;
     _count: {
       attempts: number;
     };
@@ -70,7 +68,7 @@ interface UserDetails {
   };
 }
 
-export default function UserDetailsPage({ params }: { params: { id: string } }) {
+export default function UserDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession({
     required: true,
     onUnauthenticated() {
@@ -81,17 +79,29 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
   const router = useRouter();
   const [user, setUser] = useState<UserDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setUserId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
 
   useEffect(() => {
     if (session?.user?.role !== "ADMIN") {
       redirect("/access-denied");
     }
-    fetchUserDetails();
-  }, [session, params.id]);
+    if (userId) {
+      fetchUserDetails();
+    }
+  }, [session, userId]);
 
   const fetchUserDetails = async () => {
+    if (!userId) return;
     try {
-      const response = await fetch(`/api/admin/users/${params.id}`);
+      const response = await fetch(`/api/admin/users/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
@@ -375,7 +385,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                           <div>
                             <p className="font-medium text-slate-900 dark:text-white">{exam.title}</p>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                              Created on {new Date(exam.createdAt).toLocaleDateString()}
+                              Exam created by teacher
                             </p>
                           </div>
                         </div>

@@ -201,7 +201,6 @@ export async function GET(
             exam: {
               select: {
                 title: true,
-                createdAt: true,
               },
             },
           },
@@ -211,14 +210,13 @@ export async function GET(
         exams: {
           select: {
             title: true,
-            createdAt: true,
             _count: {
               select: {
                 attempts: true,
               },
             },
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: { id: "desc" },
           take: 10,
         },
         _count: {

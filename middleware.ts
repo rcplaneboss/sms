@@ -21,6 +21,7 @@ const roleBasedAccess = {
     "/courses",
     "/grade-overview",
     "/user-management",
+    "/user-management/new",
   ],
   teacher: [
     "/teacher-dashboard",

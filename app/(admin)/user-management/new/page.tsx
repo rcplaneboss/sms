@@ -74,9 +74,7 @@ export default function NewUserPage() {
     equipment: ""
   });
 
-  if (session?.user?.role !== "ADMIN") {
-    redirect("/access-denied");
-  }
+  
 
   const updateForm = (field: keyof UserForm, value: string | number) => {
     setForm(prev => ({ ...prev, [field]: value }));
