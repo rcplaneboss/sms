@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
       pendingApplications,
       pendingPayments,
       verifiedPayments,
+      activeTerms,
+      publishedTerms,
+      currentActiveTerm,
       recentApplications,
       recentPayments,
     ] = await Promise.all([
@@ -32,6 +35,9 @@ export async function GET(req: NextRequest) {
       prisma.application.count({ where: { status: "PENDING" } }),
       prisma.payment.count({ where: { status: { in: ["PENDING", "SUBMITTED"] } } }),
       prisma.payment.count({ where: { status: "VERIFIED" } }),
+      prisma.academicTerm.count(),
+      prisma.academicTerm.count({ where: { isPublished: true } }),
+      prisma.academicTerm.findFirst({ where: { isActive: true } }),
       prisma.application.findMany({
         take: 10,
         orderBy: { createdAt: "desc" },
@@ -62,6 +68,9 @@ export async function GET(req: NextRequest) {
       pendingApplications,
       pendingPayments,
       verifiedPayments,
+      activeTerms,
+      publishedTerms,
+      currentActiveTerm,
       recentApplications,
       recentPayments,
     });

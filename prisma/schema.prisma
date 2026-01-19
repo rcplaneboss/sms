@@ -305,6 +305,29 @@ model Vacancy {
 }
 
 // ---------------------------------------------------------------- //
+// Academic Term Management
+// ---------------------------------------------------------------- //
+
+model AcademicTerm {
+  id          String    @id @default(uuid())
+  name        TermType  // FIRST, SECOND, THIRD
+  year        String    // "2024/2025"
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean   @default(false) // Current active term
+  isPublished Boolean   @default(false) // Students can access exams/reports
+  publishedAt DateTime?
+  publishedBy String?   // Admin user ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  exams       Exam[]
+  
+  @@unique([name, year])
+}
+
+// ---------------------------------------------------------------- //
 // Exams and Questions
 // ---------------------------------------------------------------- //
 
@@ -316,6 +339,7 @@ model Exam {
   term        TermType   @default(FIRST)
   examType    ExamType   @default(EXAM) // CA or EXAM
   duration    Int        @default(60) // Duration in minutes
+  isPublished Boolean    @default(false) // Individual exam publishing
   questions   Question[]
   attempts    Attempt[]
 
@@ -328,6 +352,10 @@ model Exam {
   levelId   String
   subjectId String?
   subject   Subject? @relation(fields: [subjectId], references: [id])
+  
+  // Term association
+  academicTermId String?
+  academicTerm   AcademicTerm? @relation(fields: [academicTermId], references: [id])
 }
 
 model Question {

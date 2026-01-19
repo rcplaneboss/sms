@@ -22,16 +22,15 @@ const roleBasedAccess = {
     "/grade-overview",
     "/user-management",
     "/user-management/new",
+    "/terms",
   ],
   teacher: [
     "/teacher-dashboard",
     "/classes",
-    "/exams",
+    "/teacher-exams",
     "/grading",
     "/teacher-onboard",
-    "/assigned-courses",
-    "/exams/create",
-    "/exams",
+    "/assigned-courses"
   ],
   student: [
     "/student-dashboard",
@@ -40,7 +39,8 @@ const roleBasedAccess = {
     "/my-results",
     "/payments",
     "/programs",
-    '/my-exams'
+    '/my-exams',
+    "/my-reports",
   ],
 };
 
@@ -93,7 +93,13 @@ export default auth((req) => {
 
   const normalizedRole = userRole.toLowerCase() as keyof typeof roleBasedAccess;
   const allowedRoutes = roleBasedAccess[normalizedRole];
+  
+  // Debug logging
+  console.log('Middleware check:', { pathname, userRole: normalizedRole, allowedRoutes });
+  
   const hasAccess = allowedRoutes?.some((route) => pathname.startsWith(route));
+  
+  console.log('Access result:', { hasAccess, pathname });
 
   // If the user doesn't have access, redirect to an "access denied" page
   if (!hasAccess) {

@@ -6,12 +6,18 @@ import { useEffect, useState } from "react";
 import { DashboardStatCard } from "@/components/DashboardStatCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Users, FileText, BarChart3, Loader2, ArrowRight } from "lucide-react";
+import { BookOpen, Users, FileText, BarChart3, Loader2, ArrowRight, Calendar, CheckCircle, Eye, EyeOff } from "lucide-react";
 
 interface TeacherStats {
   assignedSubjects: number;
   totalStudents: number;
   pendingGrades: number;
+  currentTerm?: {
+    name: string;
+    year: string;
+    isActive: boolean;
+    isPublished: boolean;
+  };
   subjects: any[];
 }
 
@@ -79,6 +85,41 @@ export default function TeacherDashboard() {
             Here's an overview of your courses and teaching responsibilities.
           </p>
         </div>
+
+        {/* Current Term Status */}
+        {stats.currentTerm && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">
+                    Current Term: {stats.currentTerm.name} {stats.currentTerm.year}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    {stats.currentTerm.isActive && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                        <CheckCircle className="h-3 w-3" />
+                        Active
+                      </span>
+                    )}
+                    {stats.currentTerm.isPublished ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                        <Eye className="h-3 w-3" />
+                        Published - Students can access exams
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                        <EyeOff className="h-3 w-3" />
+                        Unpublished - Students cannot access exams yet
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

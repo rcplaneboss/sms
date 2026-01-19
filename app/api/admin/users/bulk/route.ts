@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  let action: string | undefined;
+  
   try {
     const session = await auth();
 
@@ -10,7 +12,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { action, userIds } = await req.json();
+    const body = await req.json();
+    action = body.action;
+    const { userIds } = body;
 
     if (!action || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json(
@@ -67,6 +71,32 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        // Delete related records first to avoid foreign key constraints
+        await prisma.studentProfile.deleteMany({
+          where: { userId: { in: nonAdminUserIds } },
+        });
+        
+        await prisma.teacherProfile.deleteMany({
+          where: { userId: { in: nonAdminUserIds } },
+        });
+        
+        await prisma.application.deleteMany({
+          where: { userId: { in: nonAdminUserIds } },
+        });
+        
+        await prisma.enrollment.deleteMany({
+          where: { studentId: { in: nonAdminUserIds } },
+        });
+        
+        await prisma.attempt.deleteMany({
+          where: { userId: { in: nonAdminUserIds } },
+        });
+        
+        await prisma.exam.deleteMany({
+          where: { createdById: { in: nonAdminUserIds } },
+        });
+
+        // Now delete the users
         result = await prisma.user.deleteMany({
           where: { id: { in: nonAdminUserIds } },
         });

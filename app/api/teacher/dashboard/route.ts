@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/prisma";
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -94,11 +94,65 @@ export async function GET(req: NextRequest) {
       });
     });
 
+    // Get current active term
+    const currentTerm = await prisma.academicTerm.findFirst({
+      where: { isActive: true },
+      select: { name: true, year: true, isActive: true, isPublished: true }
+    });
+
+    // Get all terms for exam creation
+    const terms = await prisma.academicTerm.findMany({
+      select: { id: true, name: true, year: true, isActive: true, isPublished: true },
+      orderBy: { createdAt: "desc" }
+    });
+
+    // Extract unique programs, levels, tracks, and subjects from assignments
+    const programsSet = new Set();
+    const levelsSet = new Set();
+    const tracksSet = new Set();
+    const subjectsSet = new Set();
+
+    teacherProfile.assignments.forEach(assignment => {
+      // Programs
+      programsSet.add(JSON.stringify({
+        id: assignment.program.id,
+        name: assignment.program.name
+      }));
+      
+      // Levels
+      levelsSet.add(JSON.stringify({
+        id: assignment.program.levelId,
+        name: assignment.program.level.name
+      }));
+      
+      // Tracks
+      tracksSet.add(JSON.stringify({
+        id: assignment.program.trackId,
+        name: assignment.program.track.name
+      }));
+      
+      // Subjects
+      subjectsSet.add(JSON.stringify({
+        id: assignment.subject.id,
+        name: assignment.subject.name
+      }));
+    });
+
+    const programs = Array.from(programsSet).map(p => JSON.parse(p));
+    const levels = Array.from(levelsSet).map(l => JSON.parse(l));
+    const tracks = Array.from(tracksSet).map(t => JSON.parse(t));
+    const subjects = Array.from(subjectsSet).map(s => JSON.parse(s));
+
     return NextResponse.json({
       assignedSubjects: subjectMap.size,
       totalStudents: allStudents.size,
       pendingGrades,
-      subjects: Array.from(subjectMap.values())
+      currentTerm,
+      subjects: Array.from(subjectMap.values()),
+      terms,
+      programs,
+      levels,
+      tracks
     });
   } catch (error) {
     console.error("Error fetching teacher dashboard data:", error);

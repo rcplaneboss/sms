@@ -18,6 +18,9 @@ import {
   BarChart3,
   Loader2,
   ArrowRight,
+  Calendar,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -28,6 +31,13 @@ interface DashboardStats {
   pendingApplications: number;
   pendingPayments: number;
   verifiedPayments: number;
+  activeTerms: number;
+  publishedTerms: number;
+  currentActiveTerm?: {
+    name: string;
+    year: string;
+    isPublished: boolean;
+  };
   recentApplications: Array<{
     id: string;
     user: { name: string; email: string };
@@ -206,7 +216,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <DashboardStatCard
             title="Total Applications"
             value={stats.totalApplications}
@@ -220,12 +230,51 @@ export default function AdminDashboard() {
             subtext={`${stats.verifiedPayments} verified`}
           />
           <DashboardStatCard
+            title="Academic Terms"
+            value={stats.activeTerms || 0}
+            icon={<Calendar className="h-5 w-5" />}
+            subtext={`${stats.publishedTerms || 0} published`}
+          />
+          <DashboardStatCard
             title="System Health"
             value="Healthy"
             icon={<TrendingUp className="h-5 w-5" />}
             subtext="All systems operational"
           />
         </div>
+
+        {/* Current Term Status */}
+        {stats.currentActiveTerm && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Current Active Term: {stats.currentActiveTerm.name} {stats.currentActiveTerm.year}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    {stats.currentActiveTerm.isPublished ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                        <Eye className="h-3 w-3" />
+                        Published
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                        <EyeOff className="h-3 w-3" />
+                        Unpublished
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button href="/terms" variant="outline" size="sm">
+                Manage Terms
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Applications */}
@@ -375,6 +424,17 @@ export default function AdminDashboard() {
               <span>Manage Programs</span>
               <span className="text-xs text-slate-600 dark:text-slate-400">
                 {stats.totalPrograms} total
+              </span>
+            </Button>
+            <Button
+              href="/terms"
+              variant="outline"
+              className="h-auto flex-col py-6 justify-center items-center gap-2 rounded-lg border-2"
+            >
+              <Calendar className="h-6 w-6" />
+              <span>Manage Terms</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400">
+                {stats.activeTerms || 0} active
               </span>
             </Button>
             <Button

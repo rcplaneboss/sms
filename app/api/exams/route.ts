@@ -14,6 +14,12 @@ export async function GET(req: NextRequest) {
     }
 
     const exams = await prisma.exam.findMany({
+      where: {
+        OR: [
+          { academicTerm: { isPublished: true } },
+          { academicTermId: null }
+        ]
+      },
       include: {
         questions: {
           select: { id: true, text: true, type: true, options: true }
@@ -27,6 +33,9 @@ export async function GET(req: NextRequest) {
         track: { select: { name: true } },
         createdBy: {
           select: { name: true }
+        },
+        academicTerm: {
+          select: { name: true, year: true, isPublished: true }
         }
       }
     });
@@ -53,7 +62,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { title, programId, levelId, trackId, subjectId, duration, examType, term } = await req.json();
+    const { title, programId, levelId, trackId, subjectId, duration, examType, academicTermId } = await req.json();
 
     if (!title || title.trim() === '') {
       return NextResponse.json(
@@ -69,6 +78,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get the current active term
+    const activeTerm = await prisma.academicTerm.findFirst({
+      where: { isActive: true }
+    });
+
     const exam = await prisma.exam.create({
       data: {
         title: title.trim(),
@@ -78,8 +92,9 @@ export async function POST(req: NextRequest) {
         subjectId: subjectId,
         duration: duration || 60,
         examType: examType || 'EXAM',
-        term: term || 'FIRST',
-        createdById: session.user.id
+        term: 'FIRST', // Keep for backward compatibility
+        createdById: session.user.id,
+        academicTermId: academicTermId || activeTerm?.id
       },
       include: {
         questions: true,

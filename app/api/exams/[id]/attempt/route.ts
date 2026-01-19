@@ -17,11 +17,19 @@ export async function POST(
     // Check if exam exists
     const exam = await prisma.exam.findUnique({
       where: { id },
-      include: { questions: true }
+      include: { 
+        questions: true,
+        academicTerm: true
+      }
     });
 
     if (!exam) {
       return NextResponse.json({ error: "Exam not found" }, { status: 404 });
+    }
+
+    // Check if term is published (students can only access published terms)
+    if (session.user.role === "STUDENT" && exam.academicTerm && !exam.academicTerm.isPublished) {
+      return NextResponse.json({ error: "This exam is not yet available" }, { status: 403 });
     }
 
     // Verify enrollment

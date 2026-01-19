@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardStatCard } from "@/components/DashboardStatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,8 @@ export default function StudentDashboard() {
       redirect("/login");
     },
   });
+
+  const router = useRouter();
 
   const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [payments, setPayments] = useState<StudentPayment[]>([]);
@@ -233,7 +235,7 @@ export default function StudentDashboard() {
                   <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   My Applications
                 </h2>
-                <Button href="/programs" variant="outline" size="sm">
+                <Button onClick={() => router.push("/programs")} variant="outline" size="sm">
                   Apply to Programs
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -318,7 +320,7 @@ export default function StudentDashboard() {
                               {cls.course.subject.name} • Taught by {cls.teacher?.user?.name || "Unknown"}
                             </p>
                           </div>
-                          <Button href={`/classes/${cls.id}`} variant="outline" size="sm">
+                          <Button onClick={() => router.push(`/classes/${cls.id}`)} variant="outline" size="sm">
                             View Class
                           </Button>
                         </div>
@@ -374,7 +376,7 @@ export default function StudentDashboard() {
                     </Card>
                   ))}
                   {payments.length > 3 && (
-                    <Button href="/payments" variant="outline" size="sm" className="w-full">
+                    <Button onClick={() => router.push("/payments")} variant="outline" size="sm" className="w-full">
                       View All ({payments.length})
                     </Button>
                   )}
@@ -389,19 +391,23 @@ export default function StudentDashboard() {
                 Quick Links
               </h2>
               <div className="space-y-2">
-                <Button href="/programs" variant="outline" size="sm" className="w-full justify-start">
+                <Button onClick={() => router.push("/programs")} variant="outline" size="sm" className="w-full justify-start">
                   <FileText className="h-4 w-4 mr-2" />
                   Browse Programs
                 </Button>
-                <Button href="/payments" variant="outline" size="sm" className="w-full justify-start">
+                <Button onClick={() => router.push("/payments")} variant="outline" size="sm" className="w-full justify-start">
                   <CreditCard className="h-4 w-4 mr-2" />
                   View All Payments
                 </Button>
-                <Button href="/profile" variant="outline" size="sm" className="w-full justify-start">
+                <Button onClick={() => router.push("/my-reports")} variant="outline" size="sm" className="w-full justify-start">
+                  <FileText className="h-4 w-4 mr-2" />
+                  My Reports
+                </Button>
+                <Button onClick={() => router.push("/profile")} variant="outline" size="sm" className="w-full justify-start">
                   <ClipboardList className="h-4 w-4 mr-2" />
                   My Profile
                 </Button>
-                <Button href="/settings" variant="outline" size="sm" className="w-full justify-start">
+                <Button onClick={() => router.push("/settings")} variant="outline" size="sm" className="w-full justify-start">
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Settings
                 </Button>

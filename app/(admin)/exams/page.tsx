@@ -37,6 +37,14 @@ interface Subject {
   name: string;
 }
 
+interface AcademicTerm {
+  id: string;
+  name: string;
+  year: string;
+  isActive: boolean;
+  isPublished: boolean;
+}
+
 
 interface Program {
   id: string;
@@ -51,12 +59,20 @@ interface Exam {
   id: string;
   title: string;
   createdById: string;
+  term: string;
+  examType: string;
+  duration?: number;
   questions: { id: string; text: string; type: string; options?: { id: string; text: string; isCorrect: boolean }[] }[];
   track: Track | null;
   level: Level | null;
   program: Program | null;
   createdBy: { name: string };
   attempts: { id: string; score: number | null }[];
+  academicTerm?: {
+    name: string;
+    year: string;
+    isPublished: boolean;
+  } | null;
   createdAt: string;
 }
 
@@ -72,6 +88,7 @@ export default function AdminExamsPage() {
   const [levels, setLevels] = useState<Level[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [terms, setTerms] = useState<AcademicTerm[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -82,7 +99,7 @@ export default function AdminExamsPage() {
   const [newExamSubject, setNewExamSubject] = useState("");
   const [newExamDuration, setNewExamDuration] = useState("60");
   const [newExamType, setNewExamType] = useState("EXAM");
-  const [newExamTerm, setNewExamTerm] = useState("FIRST");
+  const [newExamTerm, setNewExamTerm] = useState("");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [editingExam, setEditingExam] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -107,19 +124,21 @@ export default function AdminExamsPage() {
     setLoading(true);
     try {
 
-      const [programsRes, levelsRes, tracksRes, subjectsRes] =
+      const [programsRes, levelsRes, tracksRes, subjectsRes, termsRes] =
         await Promise.all([
           fetch("/api/programs"),
           fetch("/api/levels"),
           fetch("/api/tracks"),
           fetch("/api/subjects"),
+          fetch("/api/admin/terms"),
         ]);
 
       if (
         !programsRes.ok ||
         !levelsRes.ok ||
         !tracksRes.ok ||
-        !subjectsRes.ok
+        !subjectsRes.ok ||
+        !termsRes.ok
       ) {
         throw new Error("Failed to fetch data");
       }
@@ -128,11 +147,13 @@ export default function AdminExamsPage() {
       const levelsData: Level[] = await levelsRes.json();
       const tracksData: Track[] = await tracksRes.json();
       const subjectsData: Subject[] = await subjectsRes.json();
+      const termsData = await termsRes.json();
 
       setPrograms(programsData);
       setLevels(levelsData);
       setTracks(tracksData);
       setSubjects(subjectsData);
+      setTerms(termsData.terms || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data. Please try again.");
@@ -183,8 +204,8 @@ export default function AdminExamsPage() {
       return;
     }
 
-    if (!newExamSubject) {
-      toast.error("Subject is required");
+    if (!newExamTerm) {
+      toast.error("Academic term is required");
       return;
     }
     setCreating(true);
@@ -200,7 +221,7 @@ export default function AdminExamsPage() {
           subjectId: newExamSubject,
           duration: parseInt(newExamDuration),
           examType: newExamType,
-          term: newExamTerm,
+          academicTermId: newExamTerm,
         }),
       });
 
@@ -431,9 +452,12 @@ export default function AdminExamsPage() {
                         className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         disabled={creating}
                       >
-                        <option value="FIRST">First Term</option>
-                        <option value="SECOND">Second Term</option>
-                        <option value="THIRD">Third Term</option>
+                        <option value="">Select Term</option>
+                        {terms.map((term) => (
+                          <option key={term.id} value={term.id}>
+                            {term.name} {term.year} {term.isActive ? '(Active)' : ''}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -570,9 +594,15 @@ export default function AdminExamsPage() {
                           }`}>
                             {exam.examType === 'CA' ? 'Continuous Assessment' : 'Examination'}
                           </span>
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            {exam.term} Term
-                          </span>
+                          {exam.academicTerm ? (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                              {exam.academicTerm.name} {exam.academicTerm.year}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                              {exam.term} Term
+                            </span>
+                          )}
                         </div>
                         <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400 mt-2">
                           <span>{exam.questions.length} questions</span>

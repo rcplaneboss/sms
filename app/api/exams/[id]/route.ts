@@ -132,6 +132,19 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    // Delete related data first
+    await prisma.questionGrade.deleteMany({
+      where: { attempt: { examId: id } }
+    });
+
+    await prisma.attempt.deleteMany({
+      where: { examId: id }
+    });
+
+    await prisma.questionOption.deleteMany({
+      where: { question: { examId: id } }
+    });
+
     await prisma.question.deleteMany({
       where: { examId: id }
     });

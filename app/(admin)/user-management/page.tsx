@@ -13,7 +13,7 @@ import {
   Users, Search, MoreHorizontal, Edit, Trash2, Mail, Phone, Calendar,
   Shield, GraduationCap, BookOpen, Loader2, Eye, Download, RefreshCw,
   UserPlus, FileText, Filter, Ban, UserCheck, CheckCircle, XCircle, AlertCircle,
-  ExternalLink
+  ExternalLink, ChevronDown
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -223,23 +223,52 @@ export default function UserManagementPage() {
     }
   };
 
-  const exportUsers = () => {
+  const exportUsers = (exportType: "all" | "filtered" | "selected" = "filtered") => {
+    let usersToExport: User[] = [];
+    let filename = "users_export";
+    
+    switch (exportType) {
+      case "all":
+        usersToExport = users;
+        filename = "all_users_export";
+        break;
+      case "filtered":
+        usersToExport = filteredUsers;
+        filename = "filtered_users_export";
+        break;
+      case "selected":
+        if (selectedUsers.length === 0) {
+          toast.error("No users selected for export");
+          return;
+        }
+        usersToExport = users.filter(user => selectedUsers.includes(user.id));
+        filename = "selected_users_export";
+        break;
+    }
+    
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Email,Role,Status,Created At,Phone\n" +
-      filteredUsers.map(user => {
+      "Name,Email,Role,Status,Created At,Phone,Address,Guardian Name,Guardian Contact,Highest Degree,Experience Years\n" +
+      usersToExport.map(user => {
         const name = user.StudentProfile?.fullName || user.TeacherProfile?.fullName || user.name || "";
         const phone = user.StudentProfile?.phoneNumber || user.TeacherProfile?.phoneNumber || "";
-        return `"${name}","${user.email}","${user.role}","${user.status || "ACTIVE"}","${new Date(user.createdAt).toLocaleDateString()}","${phone}"`;
+        const address = user.StudentProfile?.address || user.TeacherProfile?.address || "";
+        const guardianName = user.StudentProfile?.guardianName || "";
+        const guardianContact = user.StudentProfile?.guardianContact || "";
+        const degree = user.TeacherProfile?.highestDegree || "";
+        const experience = user.TeacherProfile?.experienceYears || "";
+        
+        return `"${name}","${user.email}","${user.role}","${user.status || "ACTIVE"}","${new Date(user.createdAt).toLocaleDateString()}","${phone}","${address}","${guardianName}","${guardianContact}","${degree}","${experience}"`;
       }).join("\n");
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Users exported successfully");
+    
+    toast.success(`${usersToExport.length} users exported successfully`);
   };
 
   const handleEditUser = (user: User) => {
@@ -330,10 +359,33 @@ export default function UserManagementPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportUsers} className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => exportUsers("filtered")}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export Filtered ({filteredUsers.length} users)
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => exportUsers("selected")}
+                  disabled={selectedUsers.length === 0}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Export Selected ({selectedUsers.length} users)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportUsers("all")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  Export All ({users.length} users)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={fetchUsers} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -646,6 +698,12 @@ export default function UserManagementPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
+                            {user.role === "STUDENT" && (
+                              <DropdownMenuItem onClick={() => router.push(`/reports/student/${user.id}`)}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Generate Report
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleDeleteUser(user)} className="text-red-600">
                               <Trash2 className="mr-2 h-4 w-4" />

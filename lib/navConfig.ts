@@ -56,7 +56,7 @@ export const adminNavGroups = [
       { href: "/levels", label: "Levels" },
       { href: "/tracks", label: "Tracks" },
       { href: "/subjects", label: "Subjects" },
-      { href: "/courses", label: "Courses" },
+      { href: "/terms", label: "School Terms Management" },
     ]
   },
   {
