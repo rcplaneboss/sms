@@ -86,7 +86,7 @@ export default function ExamDetailsPage() {
               {exam.title}
             </h1>
             <p className="text-slate-600 dark:text-slate-400 mt-2">
-              {exam.academicTerm.name} {exam.academicTerm.year}
+              {exam?.academicTerm?.name} {exam?.academicTerm?.year}
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function ExamDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{exam._count.questions}</p>
+              <p className="text-2xl font-bold">{exam?._count?.questions}</p>
             </CardContent>
           </Card>
 
@@ -124,7 +124,7 @@ export default function ExamDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{exam._count.attempts}</p>
+              <p className="text-2xl font-bold">{exam?._count?.attempts}</p>
             </CardContent>
           </Card>
         </div>
@@ -181,7 +181,7 @@ export default function ExamDetailsPage() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => router.push(`/teacher/teacher-exams/${exam.id}/questions`)}
+              onClick={() => router.push(`/teacher-exams/${exam.id}/questions`)}
               className="w-full md:w-auto"
             >
               <Plus className="h-4 w-4 mr-2" />

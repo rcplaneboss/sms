@@ -72,7 +72,7 @@ export default function TeacherExamsPage() {
               Manage your exams and questions
             </p>
           </div>
-          <Button onClick={() => router.push("/teacher/teacher-exams/create")}>
+          <Button onClick={() => router.push("/teacher-exams/create")}>
             <Plus className="h-4 w-4 mr-2" />
             Create Exam
           </Button>
@@ -88,7 +88,7 @@ export default function TeacherExamsPage() {
               <p className="text-slate-600 dark:text-slate-400 mb-4">
                 Create your first exam to get started
               </p>
-              <Button onClick={() => router.push("/teacher/teacher-exams/create")}>
+              <Button onClick={() => router.push("/teacher-exams/create")}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Exam
               </Button>
@@ -134,7 +134,7 @@ export default function TeacherExamsPage() {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => router.push(`/teacher/teacher-exams/${exam.id}`)}
+                    onClick={() => router.push(`/teacher-exams/${exam.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details

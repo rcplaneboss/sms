@@ -28,6 +28,7 @@ const roleBasedAccess = {
     "/teacher-dashboard",
     "/classes",
     "/teacher-exams",
+    "/teacher-exams/create",
     "/grading",
     "/teacher-onboard",
     "/assigned-courses"
@@ -41,6 +42,7 @@ const roleBasedAccess = {
     "/programs",
     '/my-exams',
     "/my-reports",
+    "/my-profile"
   ],
 };
 
@@ -96,6 +98,7 @@ export default auth((req) => {
   
   // Debug logging
   console.log('Middleware check:', { pathname, userRole: normalizedRole, allowedRoutes });
+  console.log('Checking teacher-exams access:', pathname.startsWith('/teacher-exams'));
   
   const hasAccess = allowedRoutes?.some((route) => pathname.startsWith(route));
   

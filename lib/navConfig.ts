@@ -6,7 +6,7 @@ export const publicNav = [
   { href: "/pricing", label: "Pricing" },
   { href: "/vacancy", label: "Vacancies" },
   { href: "/register", label: "Register" },
-  { href: "/vacancy", label: "Apply as Teacher" },
+  { href: "/vacancy", label: "Teacher Application" },
   { href: "/login", label: "Login" },
 ];
 
@@ -16,14 +16,15 @@ export const studentNav = [
   { href: "/my-exams", label: "Exams" },
   { href: "/my-results", label: "Results" },
   { href: "/payments", label: "Payments" },
+  { href: "/my-profile", label: "Profile" },
 ];
 
 export const teacherNav = [
   { href: "/teacher-dashboard", label: "Dashboard" },
-  { href: "/classes", label: "Classes" },
   { href: "/assigned-courses", label: "My Assignments" },
   { href: "/grading/grades", label: "Grading" },
   { href: "/grading/calculate", label: "Calculate Grades" },
+  { href: "/teacher-exams", label: "Exams" },
   { href: "/settings", label: "Settings" },
 ];
 
