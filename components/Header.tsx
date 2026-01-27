@@ -68,7 +68,7 @@ const Header = () => {
       </div>
 
       {/* Main Nav */}
-      <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center max-md:justify-between items-center dark:bg-black overflow-x-hidden overflow-y-visible z-50">
+      <div className="w-full bg-white h-16 px-30 max-md:px-8 flex justify-center max-md:justify-between items-center dark:bg-black  z-50">
         <div className="flex justify-between w-full items-center ">
           {/* Logo */}
           <div>

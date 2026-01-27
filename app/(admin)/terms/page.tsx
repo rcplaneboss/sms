@@ -97,6 +97,28 @@ export default function TermManagementPage() {
     }
   };
 
+  const handleActivate = async (termId: string) => {
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/admin/terms/${termId}/activate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        toast.success("Term activated successfully");
+        fetchTerms();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Failed to activate term");
+      }
+    } catch (error) {
+      toast.error("Error activating term");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePublish = async (termId: string, action: "publish" | "unpublish") => {
     setActionLoading(true);
     try {
@@ -232,6 +254,18 @@ export default function TermManagementPage() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {!term.isActive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleActivate(term.id)}
+                        disabled={actionLoading}
+                        className="gap-2"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Set Active
+                      </Button>
+                    )}
                     <Button
                       variant={term.isPublished ? "outline" : "default"}
                       size="sm"

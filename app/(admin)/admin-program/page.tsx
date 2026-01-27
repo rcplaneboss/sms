@@ -36,7 +36,6 @@ interface Program {
   description?: string;
   levelId: string;
   trackId: string;
-  courses: Course[];
   subjects: Subject[];
 }
 
@@ -47,7 +46,6 @@ const ProgramsPage = () => {
   const [levels, setLevels] = useState<Level[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
@@ -61,7 +59,6 @@ const ProgramsPage = () => {
       description: "",
       levelId: "",
       trackId: "",
-      courseIds: [],
       subjectIds: [],
     },
   });
@@ -69,12 +66,11 @@ const ProgramsPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [programsRes, levelsRes, tracksRes, coursesRes, subjectsRes] =
+      const [programsRes, levelsRes, tracksRes,  subjectsRes] =
         await Promise.all([
           fetch("/api/programs"),
           fetch("/api/levels"),
           fetch("/api/tracks"),
-          fetch("/api/courses"),
           fetch("/api/subjects"),
         ]);
 
@@ -82,7 +78,6 @@ const ProgramsPage = () => {
         !programsRes.ok ||
         !levelsRes.ok ||
         !tracksRes.ok ||
-        !coursesRes.ok ||
         !subjectsRes.ok
       ) {
         throw new Error("Failed to fetch data");
@@ -91,13 +86,11 @@ const ProgramsPage = () => {
       const programsData: Program[] = await programsRes.json();
       const levelsData: Level[] = await levelsRes.json();
       const tracksData: Track[] = await tracksRes.json();
-      const coursesData: Course[] = await coursesRes.json();
       const subjectsData: Subject[] = await subjectsRes.json();
 
       setPrograms(programsData);
       setLevels(levelsData);
       setTracks(tracksData);
-      setCourses(coursesData);
       setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -120,7 +113,6 @@ const ProgramsPage = () => {
         description: program.description,
         levelId: program.levelId,
         trackId: program.trackId,
-        courseIds: program.courses.map((course) => course.id),
         subjectIds: program.subjects.map((subject) => subject.id),
         // Assuming there is a 'duration' field in ProgramFormValues and you might want to initialize it if the backend provides it, otherwise you might need to handle its presence/absence.
         // The original code included a 'duration' field in the form but not in the Program interface or the form reset for 'edit'. I'm omitting it here for cleanliness, assuming it should be handled in the form if needed.
@@ -245,9 +237,9 @@ const ProgramsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Track
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Courses
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                   Subjects
                 </th>
@@ -278,9 +270,9 @@ const ProgramsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-slate-400">
                       {getTrackName(program.trackId)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-slate-300">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-slate-300">
                       {program.courses?.length}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-slate-300">
                       {program.subjects?.length}
                     </td>
@@ -444,7 +436,7 @@ const ProgramsPage = () => {
                 </div>
 
                 {/* Courses (Multi-select) */}
-                <div className="mb-4">
+                {/* <div className="mb-4">
                   <label
                     htmlFor="courseIds"
                     className="block text-sm font-medium"
@@ -468,7 +460,7 @@ const ProgramsPage = () => {
                       {form.formState.errors.courseIds.message}
                     </p>
                   )}
-                </div>
+                </div> */}
 
                 {/* Actions */}
                 <div className="flex justify-end gap-2">

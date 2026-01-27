@@ -15,9 +15,15 @@ export async function GET(req: NextRequest) {
 
     const exams = await prisma.exam.findMany({
       where: {
-        OR: [
-          { academicTerm: { isPublished: true } },
-          { academicTermId: null }
+        AND: [
+          {
+            OR: [
+              { academicTerm: { isPublished: true } },
+              { academicTermId: null }
+            ]
+          },
+          // Only show published individual exams
+          // { isPublished: true }
         ]
       },
       include: {
@@ -93,6 +99,7 @@ export async function POST(req: NextRequest) {
         duration: duration || 60,
         examType: examType || 'EXAM',
         term: 'FIRST', // Keep for backward compatibility
+        isPublished: false, 
         createdById: session.user.id,
         academicTermId: academicTermId || activeTerm?.id
       },

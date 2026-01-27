@@ -17,21 +17,23 @@ export async function GET(
     const term = searchParams.get("term") || "FIRST";
     const year = searchParams.get("year") || "2024/2025";
 
-    // Check if the requested term is published
-    const academicTerm = await prisma.academicTerm.findFirst({
-      where: { 
-        name: term as any,
-        year: year,
-        isPublished: true
-      }
-    });
+    // Check if the requested term is published (only for students)
+    if (session.user.role === "STUDENT") {
+      const academicTerm = await prisma.academicTerm.findFirst({
+        where: { 
+          name: term as any,
+          year: year,
+          isPublished: true
+        }
+      });
 
-    if (!academicTerm && session.user.role === "STUDENT") {
-      return NextResponse.json({ 
-        error: "Report not available", 
-        message: "This term's report is not yet published. Please check back later.",
-        hasData: false
-      }, { status: 403 });
+      if (!academicTerm) {
+        return NextResponse.json({ 
+          error: "Report not available", 
+          message: "This term's report is not yet published. Please check back later.",
+          hasData: false
+        }, { status: 403 });
+      }
     }
 
     // Get student data

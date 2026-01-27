@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/prisma";
+import prisma from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -10,40 +10,23 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id },
-      include: {
-        programs: {
-          include: {
-            subjects: true,
-            level: true,
-            track: true
-          }
-        }
-      }
-    });
-
-    if (!teacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-    }
-
-    // Get all subject IDs from teacher's programs
-    const subjectIds = teacher.programs.flatMap(program => 
-      program.subjects.map(subject => subject.id)
-    );
-
+    // Get exams created by this teacher
     const exams = await prisma.exam.findMany({
       where: {
-        subjectId: {
-          in: subjectIds
-        }
+        createdById: session.user.id
       },
       include: {
-        academicTerm: true,
-        program: true,
-        subject: true,
-        level: true,
-        track: true,
+        academicTerm: {
+          select: {
+            name: true,
+            year: true,
+            isPublished: true
+          }
+        },
+        program: { select: { name: true } },
+        subject: { select: { name: true } },
+        level: { select: { name: true } },
+        track: { select: { name: true } },
         _count: {
           select: {
             questions: true,

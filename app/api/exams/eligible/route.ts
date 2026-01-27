@@ -60,9 +60,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Fetch exams for valid programs
+    // Fetch exams for valid programs with published terms only
     const exams = await prisma.exam.findMany({
-      where: { programId: { in: validProgramIds } },
+      where: { 
+        programId: { in: validProgramIds },
+        OR: [
+          { academicTerm: { isPublished: true } },
+          { academicTermId: null }
+        ]
+      },
       include: {
         questions: { select: { id: true, text: true, type: true, options: true } },
         attempts: { where: { userId: session.user.id }, select: { id: true, score: true } },
@@ -70,6 +76,7 @@ export async function GET(req: NextRequest) {
         level: { select: { id: true, name: true } },
         track: { select: { id: true, name: true } },
         createdBy: { select: { name: true } },
+        academicTerm: { select: { name: true, year: true, isPublished: true } },
       },
     });
 

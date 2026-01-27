@@ -33,7 +33,15 @@ export const adminNav = [
   { href: "/admin/payments", label: "Payments" },
   { href: "/assignments", label: "Assignments" },
   { href: "/exams", label: "Exams" },
+   { href: "/grade-overview", label: "Grade Overview" },
+      { href: "/levels", label: "Levels" },
+      { href: "/tracks", label: "Tracks" },
+      { href: "/subjects", label: "Subjects" },
+      { href: "/terms", label: "School Terms Management" },
   { href: "/reports", label: "Reports" },
+   { href: "/user-management", label: "User Management" },
+      { href: "/pricing-list", label: "Pricing" },
+      { href: "/adverts", label: "Adverts" },
   { href: "/settings", label: "Settings" },
 ];
 
